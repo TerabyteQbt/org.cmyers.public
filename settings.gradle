@@ -1,0 +1,2 @@
+// set this or gradle will use the name of your directory, which is not reproducible
+rootProject.name = "nappysak"
