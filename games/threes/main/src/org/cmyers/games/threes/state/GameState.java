@@ -8,7 +8,6 @@ import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Random;
 import misc1.commons.ds.ImmutableSalvagingMap;
 import misc1.commons.ds.SimpleStructKey;
@@ -17,11 +16,27 @@ import misc1.commons.ds.StructBuilder;
 import misc1.commons.ds.StructKey;
 import misc1.commons.ds.StructType;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.cmyers.games.threes.random.ImmutablePrng;
+import org.cmyers.games.threes.util.BoardUtil;
 
+/**
+ * To build a blank board:
+ *
+ * GameState g = GameState.TYPE.builder().emptyBoard().emptyNext().random().build();
+ *
+ * To initialize a new game, take that empty board and run:
+ *
+ * g = g.init();
+ *
+ * Which is the same as:
+ *
+ * g = g.setNextNext().populateBoard();
+ *
+ * @author cmyers
+ *
+ */
 public class GameState extends Struct<GameState, GameState.Builder> {
-    // 6144 is the largest possible in stock game of "threes", I think.
-    private static final ImmutableList<Integer> VALID_GAME_INTS = ImmutableList.of(0, 1, 2, 3, 6, 12, 24, 48, 96, 192, 384, 768, 1536, 3072, 6144, 12288, 24576, 49152, 98304);
 
     private GameState(ImmutableMap<StructKey<GameState, ?, ?>, Object> map) {
         super(TYPE, map);
@@ -32,12 +47,20 @@ public class GameState extends Struct<GameState, GameState.Builder> {
             super(TYPE, map);
         }
 
+        public Builder random() {
+            return set(RANDOM, ImmutablePrng.of());
+        }
+
+        public Builder random(long l) {
+            return set(RANDOM, ImmutablePrng.of(l));
+        }
+
         public Builder emptyNext() {
             return set(NEXT, ImmutableList.of());
         }
 
         public Builder emptyBoard() {
-            return set(BOARD, ImmutableList.copyOf(getEmptyBoard(get(HEIGHT), get(WIDTH))));
+            return set(BOARD, ImmutableList.copyOf(BoardUtil.getEmptyBoard(get(HEIGHT), get(WIDTH))));
         }
 
     }
@@ -58,7 +81,8 @@ public class GameState extends Struct<GameState, GameState.Builder> {
 
         b.add(WIDTH = new SimpleStructKey<GameState, Integer>("width", 4));
         b.add(HEIGHT = new SimpleStructKey<GameState, Integer>("height", 4));
-        b.add(RANDOM = new SimpleStructKey<GameState, ImmutablePrng>("prng", ImmutablePrng.of()));
+        // no default value, because if we did it'd be used for all structs, giving them all the same seed
+        b.add(RANDOM = new SimpleStructKey<GameState, ImmutablePrng>("prng"));
         b.add(BOARD = new SimpleStructKey<GameState, ImmutableList<Integer>>("board"));
         b.add(NEXT = new SimpleStructKey<GameState, ImmutableList<Integer>>("next"));
 
@@ -67,14 +91,15 @@ public class GameState extends Struct<GameState, GameState.Builder> {
 
     /**
      * Main entrypoint to start a new game
-     * 
-     * Runs getNext(), emptyBoard(), populateBoard()
-     * 
+     *
+     * Runs setNextNext() and populateBoard()
+     *
+     * If the board is not empty, you should also run emptyBoard() first.
+     *
      * @return
      */
     public GameState init() {
-        GameState g = this.getNext();
-        g = g.emptyBoard();
+        GameState g = this.setNextNext();
         g = g.populateBoard();
         return g;
     }
@@ -88,29 +113,12 @@ public class GameState extends Struct<GameState, GameState.Builder> {
         return g;
     }
 
-    public GameState oldPopulateBoard() {
-        int num = (get(WIDTH) - 1) * (get(HEIGHT) - 1); // is 9 for default board
-        ArrayList<Integer> b = Lists.newArrayList(get(BOARD));
-        LinkedList<Integer> next = Lists.newLinkedList(get(NEXT));
-        Pair<Integer, ImmutablePrng> rng = Pair.of(0, get(RANDOM));
-        for(int i = 0; i < num; i++) {
-            rng = rng.getRight().nextInt(b.size());
-            // ensure space is empty, otherwise try again
-            if(b.get(rng.getLeft()) != 0) {
-                i -= 1;
-                continue;
-            }
-            b.add(rng.getLeft(), next.pop());
-        }
-        return this.set(BOARD, ImmutableList.copyOf(b)).set(RANDOM, rng.getRight()).set(NEXT, ImmutableList.copyOf(next));
-    }
-
     public long calculateBoardScore() {
         if(boardScore != 0) {
             return boardScore;
         }
         for(int i = 0; i < get(BOARD).size(); i++) {
-            boardScore += scoreTile(get(BOARD).get(i));
+            boardScore += BoardUtil.scoreTile(get(BOARD).get(i));
         }
         return boardScore;
     }
@@ -122,55 +130,20 @@ public class GameState extends Struct<GameState, GameState.Builder> {
         // many potential moves is valuable
         // two high-value things closer together is valuable
         // etc...
-        return boardValue;
-    }
-
-    public boolean canMoveX() {
-        // any blank spots mean we have 2 degrees of freedom
-        if(get(BOARD).contains(0)) {
-            return true;
-        }
-        int width = get(WIDTH);
-        int height = get(HEIGHT);
-
-        // there must exist at least one instance of two tiles next to each other that can be combined.
-        for(int i = 0; i < (width - 1); i++) {
-            for(int j = 0; j < (height); j++) {
-                int thistile = getCoord(i, j);
-                int rightof = getCoord(i + 1, j);
-
-                if(canCombine(get(BOARD).get(thistile), get(BOARD).get(rightof))) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public boolean canMoveY() {
-        // any blank spots mean we have 2 degrees of freedom
-        if(get(BOARD).contains(0)) {
-            return true;
-        }
-        int width = get(WIDTH);
-        int height = get(HEIGHT);
-
-        // there must exist at least one instance of two tiles next to each other that can be combined.
-        for(int i = 0; i < (width); i++) {
-            for(int j = 0; j < (height - 1); j++) {
-                int thistile = getCoord(i, j);
-                int below = getCoord(i, j + 1);
-
-                if(canCombine(get(BOARD).get(thistile), get(BOARD).get(below))) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return boardValue + calculateBoardScore();
     }
 
     public int getCoord(int x, int y) {
-        return x + (y * get(HEIGHT));
+        if(x < 0 || y < 0) {
+            throw new IllegalArgumentException("Coordinates must be positive integers starting from 0");
+        }
+        if(x >= get(WIDTH)) {
+            throw new IllegalArgumentException("Cannot get coordinate for width " + Integer.valueOf(x) + " (width = " + Integer.valueOf(get(WIDTH)) + ")");
+        }
+        if(y >= get(HEIGHT)) {
+            throw new IllegalArgumentException("Cannot get coordinate for height " + Integer.valueOf(y) + " (height = " + Integer.valueOf(get(HEIGHT)) + ")");
+        }
+        return x + (y * get(WIDTH));
     }
 
     public static enum MoveDirection {
@@ -187,73 +160,6 @@ public class GameState extends Struct<GameState, GameState.Builder> {
             return ImmutableList.copyOf(getSpecialTiles());
         }
         return ImmutableList.of(next);
-    }
-
-    public GameState moveLeft() {
-        // for each row, figure out what combines and if it moves or not
-        ArrayList<Integer> rowsThatMoved = Lists.newArrayListWithCapacity(get(HEIGHT));
-        ArrayList<Integer> newBoard = Lists.newArrayListWithCapacity(get(HEIGHT) * get(WIDTH));
-        for(int i = 0; i < get(HEIGHT); i++) {
-            for(int j = 0; j < (get(WIDTH) - 1); j++) {
-                int x = get(BOARD).get(getCoord(j, i));
-                int y = get(BOARD).get(getCoord(j + 1, i));
-                if(canCombine(x, y)) {
-                    // we found ones that can combine
-                    // only add the row to "rows that moved" if a non-zero tile moved
-                    // This prevents from inserting the new tile in an empty row
-                    if(rowContainsNonZeroTile(i)) {
-                        rowsThatMoved.add(i);
-                    }
-                    // place the combined tile in the new board
-                    newBoard.add(getCoord(j, i), combine(x, y));
-                    // place the remainder as they are in the row
-                    for(j = j + 2; j < get(WIDTH); j++) {
-                        newBoard.add(getCoord(j - 1, i), get(BOARD).get(getCoord(j, i)));
-                    }
-                    // add the zero space
-                    newBoard.add(getCoord(get(WIDTH) - 1, i), 0);
-                    break; // done with this row
-                }
-                // else: can't combine, keep looking, but copy over this value
-                newBoard.add(getCoord(j, i), get(BOARD).get(getCoord(j, i)));
-            }
-        }
-        // finally, add the next tile in
-        Integer next = get(NEXT).get(0);
-        Pair<Integer, ImmutablePrng> rng = Pair.of(0, get(RANDOM));
-        int nextConsumed = 1;
-        if(next == -1) {
-            // special tile - have to pick one
-            ImmutableList<Integer> specials = getSpecialTiles();
-            if(specials.size() > 1) {
-                rng = rng.getRight().nextInt(specials.size());
-                next = specials.get(rng.getLeft());
-            }
-            else if(specials.size() == 1) {
-                next = specials.get(0);
-            }
-            else {
-                // we need to keep going, drop the special on the floor.
-                if(get(NEXT).size() == 1) {
-                    // oh crap. TODO: fix this edge case. The last item in NEXT was the special which we need to ignore, so we have to get the next value in a hurry.
-                }
-                next = get(NEXT).get(1); // grab the next item instead
-                nextConsumed += 1;
-            }
-        }
-        // ok, now we need to pick a place to put it
-        int rowWithNewTile = -1;
-        if(rowsThatMoved.size() == 1) {
-            // it just goes in that row
-            rowWithNewTile = Iterables.getOnlyElement(rowsThatMoved);
-        }
-        else {
-            // gotta pick which row
-            rng = rng.getRight().nextInt(rowsThatMoved.size());
-            rowWithNewTile = rowsThatMoved.get(rng.getLeft());
-        }
-        newBoard.add(getCoord(get(WIDTH) - 1, rowWithNewTile), next);
-        return this.set(BOARD, ImmutableList.copyOf(newBoard)).set(RANDOM, rng.getRight()).set(NEXT, get(NEXT).subList(nextConsumed, get(NEXT).size())).getNext();
     }
 
     private boolean rowContainsNonZeroTile(int i) {
@@ -274,25 +180,11 @@ public class GameState extends Struct<GameState, GameState.Builder> {
         return false;
     }
 
-    public GameState moveRight() {
-        return null; // TODO
-    }
-
-    public GameState moveUp() {
-        return null; // TODO
-    }
-
-    public GameState moveDown() {
-        return null; // TODO
-    }
-
-    // PRIVATE stuffs
     // This generates the new "next" list when it has become empty
-    private GameState getNext() {
+    public GameState setNextNext() {
         if(!get(NEXT).isEmpty()) {
             return this;
         }
-
         int dimension = Math.min(get(WIDTH), get(HEIGHT));
         ArrayList<Integer> b = new ArrayList<Integer>();
         for(int i = 0; i < dimension; i++) {
@@ -319,6 +211,8 @@ public class GameState extends Struct<GameState, GameState.Builder> {
         return set(NEXT, ImmutableList.copyOf(b)).set(RANDOM, p);
     }
 
+    // PRIVATE stuffs
+
     // When we get a "special", it depends on the highest number
     // When 48 is the highest, you get a 6
     // By extrapolation, when 96 is the highest, you get 6 or 12
@@ -342,201 +236,57 @@ public class GameState extends Struct<GameState, GameState.Builder> {
     }
 
     public GameState emptyBoard() {
-        return set(BOARD, ImmutableList.copyOf(getEmptyBoard(get(HEIGHT), get(WIDTH))));
+        return set(BOARD, ImmutableList.copyOf(BoardUtil.getEmptyBoard(get(HEIGHT), get(WIDTH))));
     }
 
-    private static boolean validGameInteger(int x) {
-        return VALID_GAME_INTS.contains(x);
-    }
-
-    /**
-     * shifting in the direction TOWARDS to
-     */
-    private static boolean canCombine(int from, int to) {
-        if(from == 0) {
-            return false;
+    public boolean canMove(MoveDirection md) {
+        HashSet<Integer> rowsThatMoved = Sets.newHashSet();
+        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(this, md);
+        for(int i = 0; i < slices.size(); i++) {
+            ImmutableList<Integer> slice = slices.get(i);
+            ImmutableList<Integer> newslice = BoardUtil.shiftRow(slice);
+            if(!slice.equals(newslice)) {
+                rowsThatMoved.add(i);
+            }
         }
-        if(to == 0) {
-            return true;
-        }
-        if(from + to == 3) {
-            return true;
-        }
-        if(from == to && (from >= 3)) {
+        if(!rowsThatMoved.isEmpty()) {
             return true;
         }
         return false;
     }
 
-    private static int combine(int x, int y) {
-        return x + y;
-    }
-
-    private static int scoreTile(int i) {
-        if(!validGameInteger(i)) {
-            throw new IllegalStateException(i + " is not a valid game integer");
-        }
-
-        if(i < 3) {
-            return 0;
-        }
-        int score = 3;
-        while(i != 3) {
-            score = score * 3;
-            i = i / 2;
-        }
-        return score;
-    }
-
     public GameState shiftBoardAndInsertNewTile(MoveDirection md) {
-        ArrayList<Integer> board = Lists.newArrayList(get(BOARD));
-        int width = get(WIDTH);
-        int height = get(HEIGHT);
-
         HashSet<Integer> rowsThatMoved = Sets.newHashSet();
-        switch(md) {
-        case LEFT:
-            // shifting to the left
-            for(int i = 0; i < height; i++) {
-                if(!rowContainsNonZeroTile(i)) {
-                    // nothing to do here
-                    continue;
-                }
-                for(int j = 0, js = 0; j < width; j++, js++) {
-                    int jcoord = getCoord(j, i);
-                    int jscoord = getCoord(js, i);
-                    if(j == js) {
-                        // haven't found a combine yet
-                        if(j == width - 1) {
-                            // end of row with no combine, done
-                            continue;
-                        }
-                        if(canCombine(get(BOARD).get(jcoord + 1), get(BOARD).get(jcoord))) {
-                            board.set(jcoord, combine(get(BOARD).get(jcoord + 1), get(BOARD).get(jcoord)));
-                            rowsThatMoved.add(i);
-                            js += 1;
-                            continue;
-                        }
-                        // if havent' found a combine yet but also we can't comine j and j+1, proceed normally
-                    }
-                    if(js > (width - 1)) {
-                        // we had a shift, put a zero in there
-                        board.set(jcoord, 0);
-                        continue;
-                    }
-                    // otherwise, normal copy
-                    board.set(jcoord, get(BOARD).get(jscoord));
-                }
+        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(this, md);
+        ImmutableList.Builder<ImmutableList<Integer>> newSlices = ImmutableList.builder();
+        for(int i = 0; i < slices.size(); i++) {
+            ImmutableList<Integer> slice = slices.get(i);
+            ImmutableList<Integer> newSlice = BoardUtil.shiftRow(slice);
+            if(!slice.equals(newSlice)) {
+                rowsThatMoved.add(i);
             }
-            break;
-        case RIGHT:
-            // shifting to the right
-            for(int i = 0; i < height; i++) {
-                if(!rowContainsNonZeroTile(i)) {
-                    // nothing to do here
-                    continue;
-                }
-                for(int j = (width - 1), js = (width - 1); j >= 0; j--, js--) {
-                    int jcoord = getCoord(j, i);
-                    int jscoord = getCoord(js, i);
-                    if(j == js) {
-                        // haven't found a combine yet
-                        if(j == 0) {
-                            // end of row with no combine, done
-                            continue;
-                        }
-                        if(canCombine(get(BOARD).get(jcoord - 1), get(BOARD).get(jcoord))) {
-                            board.set(jcoord, combine(get(BOARD).get(jcoord - 1), get(BOARD).get(jcoord)));
-                            rowsThatMoved.add(i);
-                            js -= 1;
-                            continue;
-                        }
-                        // if havent' found a combine yet but also we can't comine j and j+1, proceed normally
-                    }
-                    if(js < 0) {
-                        // we had a shift, put a zero in there
-                        board.set(jcoord, 0);
-                        continue;
-                    }
-                    // otherwise, normal copy
-                    board.set(jcoord, get(BOARD).get(jscoord));
-                }
-            }
-            break;
-        case UP:
-            // shifting up
-            for(int i = 0; i < width; i++) {
-                if(!columnContainsNonZeroTile(i)) {
-                    // nothing to do here
-                    continue;
-                }
-                for(int j = 0, js = 0; j < height; j++, js++) {
-                    int jcoord = getCoord(i, j);
-                    int jscoord = getCoord(i, js);
-                    int jcoordp1 = getCoord(i, j + 1);
-                    if(j == js) {
-                        // haven't found a combine yet
-                        if(j == width - 1) {
-                            // end of row with no combine, done
-                            continue;
-                        }
-                        if(canCombine(get(BOARD).get(jcoordp1), get(BOARD).get(jcoord))) {
-                            board.set(jcoord, combine(get(BOARD).get(jcoord), get(BOARD).get(jcoordp1)));
-                            rowsThatMoved.add(i);
-                            js += 1;
-                            continue;
-                        }
-                        // if havent' found a combine yet but also we can't comine j and j+1, proceed normally
-                    }
-                    if(js > (height - 1)) {
-                        // we had a shift, put a zero in there
-                        board.set(jcoord, 0);
-                        continue;
-                    }
-                    // otherwise, normal copy
-                    board.set(jcoord, get(BOARD).get(jscoord));
-                }
-            }
-            break;
-        case DOWN:
-            // shifting down
-            for(int i = 0; i < width; i++) {
-                if(!columnContainsNonZeroTile(i)) {
-                    // nothing to do here
-                    continue;
-                }
-                for(int j = (height - 1), js = (height - 1); j >= 0; j--, js--) {
-                    int jcoord = getCoord(i, j);
-                    int jcoordm1 = getCoord(i, j - 1);
-                    int jscoord = getCoord(i, js);
-                    if(j == js) {
-                        // haven't found a combine yet
-                        if(j == 0) {
-                            // end of row with no combine, done
-                            continue;
-                        }
-                        if(canCombine(get(BOARD).get(jcoordm1), get(BOARD).get(jcoord))) {
-                            board.set(jcoord, combine(get(BOARD).get(jcoord), get(BOARD).get(jcoordm1)));
-                            rowsThatMoved.add(i);
-                            js -= 1;
-                            continue;
-                        }
-                        // if havent' found a combine yet but also we can't comine j and j-1, proceed normally
-                    }
-                    if(js < 0) {
-                        // we had a shift, put a zero in there
-                        board.set(jcoord, 0);
-                        continue;
-                    }
-                    // otherwise, normal copy
-                    board.set(jcoord, get(BOARD).get(jscoord));
-                }
-            }
-            break;
-        default:
-            throw new IllegalStateException("unknown direction");
+            newSlices.add(newSlice);
         }
-        return this.set(BOARD, ImmutableList.copyOf(board)).placeNextPieceOnBoard(md, ImmutableList.copyOf(rowsThatMoved));
+        if(rowsThatMoved.isEmpty()) {
+            throw new IllegalArgumentException("Unable to move " + md);
+        }
+        Triple<GameState, Integer, Integer> newPiece = this.getNextPieceAndRow(md, ImmutableList.copyOf(rowsThatMoved));
+        ImmutableList<ImmutableList<Integer>> builtNewSlices = newSlices.build();
+        ImmutableList.Builder<ImmutableList<Integer>> newSlicesWithNewPiece = ImmutableList.builder();
+        for(int i = 0; i < builtNewSlices.size(); i++) {
+            ImmutableList<Integer> slice = builtNewSlices.get(i);
+            if(i == newPiece.getRight()) {
+                // replace the end of this row with the new tile
+                if(!slice.get(slice.size() - 1).equals(0)) {
+                    throw new IllegalStateException("Moved row does not end in a 0");
+                }
+                newSlicesWithNewPiece.add(ImmutableList.copyOf(Iterables.concat(slice.subList(0, slice.size() - 1), ImmutableList.of(newPiece.getMiddle()))));
+                continue;
+            }
+            // otherwise unchanged
+            newSlicesWithNewPiece.add(slice);
+        }
+        return newPiece.getLeft().set(GameState.BOARD, ImmutableList.copyOf(BoardUtil.slicesToBoard(newPiece.getLeft(), newSlicesWithNewPiece.build(), md)));
     }
 
     private GameState placeInitialPieceOnBoard() {
@@ -544,8 +294,12 @@ public class GameState extends Struct<GameState, GameState.Builder> {
         ArrayList<Integer> board = Lists.newArrayList(get(BOARD));
         Pair<Integer, ImmutablePrng> rng = Pair.of(0, get(RANDOM));
 
-        Integer nextTile = next.get(0);
-        next = Lists.newArrayList(next.subList(1, next.size()));
+        Integer nextTile = -1;
+        while(nextTile == -1) {
+            // it should be impossible to run out, since we start with 12 or 13, and only one can be "special"
+            nextTile = next.get(0);
+            next = Lists.newArrayList(next.subList(1, next.size()));
+        }
         // place a tile, but only in empty (0) spaces
         int emptyCount = Iterables.frequency(board, 0);
         rng = rng.getRight().nextInt(emptyCount);
@@ -567,12 +321,12 @@ public class GameState extends Struct<GameState, GameState.Builder> {
         if(!placed) {
             throw new IllegalStateException("Unable to place tile on board - is board full?");
         }
-        return this.set(BOARD, ImmutableList.copyOf(board)).set(NEXT, ImmutableList.copyOf(next)).set(RANDOM, rng.getRight()).getNext();
+        return this.set(BOARD, ImmutableList.copyOf(board)).set(NEXT, ImmutableList.copyOf(next)).set(RANDOM, rng.getRight()).setNextNext();
     }
 
-    private GameState placeNextPieceOnBoard(MoveDirection md, ImmutableList<Integer> rowsThatMoved) {
+    private Triple<GameState, Integer, Integer> getNextPieceAndRow(MoveDirection md, ImmutableList<Integer> rowsThatMoved) {
         ArrayList<Integer> next = Lists.newArrayList(get(NEXT));
-        ArrayList<Integer> board = Lists.newArrayList(get(BOARD));
+        ImmutableList<Integer> board = get(BOARD);
         Pair<Integer, ImmutablePrng> rng = Pair.of(0, get(RANDOM));
 
         Integer nextTile = -1;
@@ -588,7 +342,7 @@ public class GameState extends Struct<GameState, GameState.Builder> {
                     if(next.isEmpty()) {
                         // edge case: if we need another tile and next is empty, we have to manually pre-fetch it
                         GameState temp = this.set(NEXT, ImmutableList.of()).set(RANDOM, rng.getRight());
-                        temp = temp.getNext();
+                        temp = temp.setNextNext();
                         next = Lists.newArrayList(temp.get(NEXT));
                         rng = Pair.of(0, temp.get(RANDOM));
                     }
@@ -606,98 +360,16 @@ public class GameState extends Struct<GameState, GameState.Builder> {
             }
         }
 
-        int x;
-        int y;
-        switch(md) {
-        case LEFT:
-            // putting the new piece on the right side of the board
-            x = get(WIDTH) - 1;
-            if(rowsThatMoved.size() == 1) {
-                y = Iterables.getOnlyElement(rowsThatMoved);
-            }
-            else {
-                // select one
-                rng = rng.getRight().nextInt(rowsThatMoved.size());
-                y = rowsThatMoved.get(rng.getLeft());
-            }
-            break;
-        case RIGHT:
-            // putting the new piece on the left side of the board
-            x = 0;
-            if(rowsThatMoved.size() == 1) {
-                y = Iterables.getOnlyElement(rowsThatMoved);
-            }
-            else {
-                // select one
-                rng = rng.getRight().nextInt(rowsThatMoved.size());
-                y = rowsThatMoved.get(rng.getLeft());
-            }
-            break;
-        case UP:
-            // putting the new piece on the bottom side of the board
-            y = get(HEIGHT) - 1;
-            if(rowsThatMoved.size() == 1) {
-                x = Iterables.getOnlyElement(rowsThatMoved);
-            }
-            else {
-                // select one
-                rng = rng.getRight().nextInt(rowsThatMoved.size());
-                x = rowsThatMoved.get(rng.getLeft());
-            }
-            break;
-        case DOWN:
-            // putting the new piece on the top side of the board
-            y = 0;
-            if(rowsThatMoved.size() == 1) {
-                x = Iterables.getOnlyElement(rowsThatMoved);
-            }
-            else {
-                // select one
-                rng = rng.getRight().nextInt(rowsThatMoved.size());
-                x = rowsThatMoved.get(rng.getLeft());
-            }
-            break;
-        default:
-            throw new IllegalStateException("unknown direction");
+        int row = -1;
+        if(rowsThatMoved.size() == 1) {
+            row = Iterables.getOnlyElement(rowsThatMoved);
         }
-        board.set(getCoord(x, y), nextTile);
-        return this.set(BOARD, ImmutableList.copyOf(board)).set(NEXT, ImmutableList.copyOf(next)).set(RANDOM, rng.getRight()).getNext();
-    }
-
-    private static ArrayList<Integer> getEmptyBoard(int height, int width) {
-        int dim = height * width;
-        ArrayList<Integer> board = Lists.newArrayListWithCapacity(dim);
-        for(int i = 0; i < dim; i++) {
-            board.add(0);
+        else {
+            // select one
+            rng = rng.getRight().nextInt(rowsThatMoved.size());
+            row = rowsThatMoved.get(rng.getLeft());
         }
-        return board;
-    }
-
-    /**
-     * Shift tiles towards the 0 index.
-     */
-    private static Pair<Boolean, ArrayList<Integer>> shiftRow(ImmutableList<Integer> row) {
-        boolean shifted = false;
-        ArrayList<Integer> newRow = Lists.newArrayList(row);
-        for(int i = 0, j = 0; i < row.size(); i++, j++) {
-            // read from i, write to j
-            if(shifted) {
-                // already shifted, just keep writing
-                newRow.set(j, row.get(i));
-                continue;
-            }
-            // check for combine
-            if(i < (row.size() - 1)) {
-                // check for combine
-                if(canCombine(row.get(i), row.get(i + 1))) {
-                    shifted = true;
-                    newRow.set(j, combine(row.get(i), row.get(i + 1)));
-                    i++;
-                    continue;
-                }
-            }
-            newRow.set(j, row.get(i));
-        }
-        return Pair.of(shifted, newRow);
+        return Triple.of(this.set(NEXT, ImmutableList.copyOf(next)).set(RANDOM, rng.getRight()).setNextNext(), nextTile, row);
     }
 }
+
