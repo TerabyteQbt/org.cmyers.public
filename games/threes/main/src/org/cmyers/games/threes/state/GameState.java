@@ -30,7 +30,7 @@ import org.cmyers.games.threes.util.BoardUtil;
  * g = g.init();
  *
  * Which is the same as:
- * 
+ *
  * g = g.setNextNext().populateBoard();
  *
  * @author cmyers
@@ -372,3 +372,4 @@ public class GameState extends Struct<GameState, GameState.Builder> {
         return Triple.of(this.set(NEXT, ImmutableList.copyOf(next)).set(RANDOM, rng.getRight()).setNextNext(), nextTile, row);
     }
 }
+

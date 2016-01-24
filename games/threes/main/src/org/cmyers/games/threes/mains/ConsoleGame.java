@@ -5,7 +5,6 @@ import com.google.common.collect.Iterables;
 import java.io.IOException;
 import org.cmyers.games.threes.console.DrawBoard;
 import org.cmyers.games.threes.state.GameState;
-import org.cmyers.games.threes.state.GameState.MoveDirection;
 
 public class ConsoleGame {
 
@@ -16,19 +15,19 @@ public class ConsoleGame {
         int quit = "q".getBytes()[0];
         int in;
         while((in = System.in.read()) != quit) {
-            MoveDirection md;
+            GameState.MoveDirection md;
             switch(in) {
             case 'w':
-                md = MoveDirection.UP;
+                md = GameState.MoveDirection.UP;
                 break;
             case 'a':
-                md = MoveDirection.LEFT;
+                md = GameState.MoveDirection.LEFT;
                 break;
             case 's':
-                md = MoveDirection.DOWN;
+                md = GameState.MoveDirection.DOWN;
                 break;
             case 'd':
-                md = MoveDirection.RIGHT;
+                md = GameState.MoveDirection.RIGHT;
                 break;
             default:
                 // ignore
@@ -43,7 +42,7 @@ public class ConsoleGame {
             {
                 // silly lambdas, you only work with final variables. Why can't the compiler do this implicitly for you?
                 final GameState gf = g;
-                if(Iterables.frequency(Iterables.transform(ImmutableList.copyOf(MoveDirection.values()), (MoveDirection md2) -> gf.canMove(md2)), true) == 0) {
+                if(Iterables.frequency(Iterables.transform(ImmutableList.copyOf(GameState.MoveDirection.values()), (GameState.MoveDirection md2) -> gf.canMove(md2)), true) == 0) {
                     System.out.println("No more moves! Score: " + g.calculateBoardScore());
                     System.exit(0);
                 }

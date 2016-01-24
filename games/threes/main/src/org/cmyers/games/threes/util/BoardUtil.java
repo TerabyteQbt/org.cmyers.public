@@ -6,7 +6,6 @@ import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import org.apache.commons.lang3.tuple.Pair;
 import org.cmyers.games.threes.state.GameState;
-import org.cmyers.games.threes.state.GameState.MoveDirection;
 
 public class BoardUtil {
 
@@ -110,30 +109,30 @@ public class BoardUtil {
     /**
      * Converts an array of integers into an array of slices based on the move direction.
      * Say our board was this:
-     * 
+     *
      * 1 2 3
      * 4 5 6
      * 7 8 9
-     * 
+     *
      * If moving up, we'd get:
-     * 
+     *
      * [[1, 4, 7], [2, 5, 8], [3, 6, 9]]
-     * 
+     *
      * If moving down, we'd get:
-     * 
+     *
      * [[7, 4, 1], [8, 5, 2], [9, 6, 3]]
-     * 
+     *
      * If moving left, we'd get:
-     * 
+     *
      * [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-     * 
+     *
      * And finally, if moving right, we'd get:
-     * 
+     *
      * [[3, 2, 1], [6, 5, 4], [9, 8, 7]]
-     * 
+     *
      * The direction of motion is always towards the column that is indexed first.
      */
-    public static ImmutableList<ImmutableList<Integer>> boardToSlices(GameState g, MoveDirection md) {
+    public static ImmutableList<ImmutableList<Integer>> boardToSlices(GameState g, GameState.MoveDirection md) {
         ImmutableList<Integer> board = g.get(GameState.BOARD);
         int width = g.get(GameState.WIDTH);
         int height = g.get(GameState.HEIGHT);
@@ -162,19 +161,19 @@ public class BoardUtil {
             break;
         }
         ImmutableList<ImmutableList<Integer>> ret = pieces.build();
-        if(md.equals(MoveDirection.RIGHT) || md.equals(MoveDirection.DOWN)) {
+        if(md.equals(GameState.MoveDirection.RIGHT) || md.equals(GameState.MoveDirection.DOWN)) {
             ret = ImmutableList.copyOf(Iterables.transform(ret, (ImmutableList<Integer> l) -> l.reverse()));
         }
         return ret;
     }
 
-    public static ArrayList<Integer> slicesToBoard(GameState g, ImmutableList<ImmutableList<Integer>> slices, MoveDirection md) {
+    public static ArrayList<Integer> slicesToBoard(GameState g, ImmutableList<ImmutableList<Integer>> slices, GameState.MoveDirection md) {
         int width = g.get(GameState.WIDTH);
         int height = g.get(GameState.HEIGHT);
 
         // reverse the slices based upon the direction of movement (see boardToSlices() impl)
         ImmutableList<ImmutableList<Integer>> newSlices = slices;
-        if(md.equals(MoveDirection.RIGHT) || md.equals(MoveDirection.DOWN)) {
+        if(md.equals(GameState.MoveDirection.RIGHT) || md.equals(GameState.MoveDirection.DOWN)) {
             newSlices = ImmutableList.copyOf(Iterables.transform(newSlices, (ImmutableList<Integer> l) -> l.reverse()));
         }
 

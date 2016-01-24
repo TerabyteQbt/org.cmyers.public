@@ -3,7 +3,7 @@ package org.cmyers.games.threes.util;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
-import java.util.Map.Entry;
+import java.util.Map;
 import misc1.commons.ds.ImmutableSalvagingMap;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
@@ -64,7 +64,7 @@ public class BoardUtilTest {
         tests = tests.simplePut(Pair.of(1, 0), false);
         // but 1 into 0 works
         tests = tests.simplePut(Pair.of(0, 1), true);
-        for(Entry<Pair<Integer, Integer>, Boolean> e : tests.entries()) {
+        for(Map.Entry<Pair<Integer, Integer>, Boolean> e : tests.entries()) {
             Assert.assertEquals(e.getValue(), BoardUtil.canCombine(e.getKey().getLeft(), e.getKey().getRight()));
         }
     }

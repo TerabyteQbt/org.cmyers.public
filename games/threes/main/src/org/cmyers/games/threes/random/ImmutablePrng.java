@@ -24,7 +24,7 @@ public class ImmutablePrng {
 
     /**
      * The internal state of the PRNG is entirely held by this Long value.
-     * 
+     *
      * By being immutable, a ton of their nasty AtomicLong code gets to die.
      */
     private final Long seed;
@@ -105,9 +105,9 @@ public class ImmutablePrng {
      * <pre>
      * {@code (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1)}
      * </pre>
-     * 
+     *
      * and the random value returned is:
-     * 
+     *
      * <pre>
      * {@code (int)(seed >>> (48 - bits))}
      * </pre>
@@ -143,7 +143,7 @@ public class ImmutablePrng {
      *       bytes[i++] = (byte)rnd;
      * }}
      * </pre>
-     * 
+     *
      * Except for the seed of this object remains unchanged and a new
      * ImmutablePrng object is returned instead which has the new seed and should be used for future calls.
      *
@@ -192,7 +192,7 @@ public class ImmutablePrng {
      * {@code Integer} values are produced with (approximately) equal
      * probability. The method {@code nextInt(int bound)} is implemented
      * as if by:
-     * 
+     *
      * <pre>
      *  {@code
      * public int nextInt(int bound) {
@@ -210,7 +210,7 @@ public class ImmutablePrng {
      *   return val;
      * }}
      * </pre>
-     * 
+     *
      * Except for the seed of this object remains unchanged and a new
      * ImmutablePrng object is returned instead which has the new seed and should be used for future calls.
      * <p>
@@ -271,7 +271,7 @@ public class ImmutablePrng {
      * <p>
      * The method {@code nextLong} is implemented by class {@code Random}
      * as if by:
-     * 
+     *
      * <pre>
      *  {@code
      * public long nextLong() {
@@ -305,14 +305,14 @@ public class ImmutablePrng {
      *
      * <p>
      * The method {@code nextBoolean} is implemented as if by:
-     * 
+     *
      * <pre>
      *  {@code
      * public boolean nextBoolean() {
      *   return next(1) != 0;
      * }}
      * </pre>
-     * 
+     *
      * Except for the seed of this object remains unchanged and a new
      * ImmutablePrng object is returned instead which has the new seed and should be used for future calls.
      *
@@ -341,14 +341,14 @@ public class ImmutablePrng {
      *
      * <p>
      * The method {@code nextFloat} is implemented as if by:
-     * 
+     *
      * <pre>
      *  {@code
      * public float nextFloat() {
      *   return next(24) / ((float)(1 << 24));
      * }}
      * </pre>
-     * 
+     *
      * Except for the seed of this object remains unchanged and a new
      * ImmutablePrng object is returned instead which has the new seed and should be used for future calls.
      *
@@ -359,7 +359,7 @@ public class ImmutablePrng {
      * chosen bits, then the algorithm shown would choose {@code float}
      * values from the stated range with perfect uniformity.
      * <p>
-     * 
+     *
      * @return the next pseudorandom, uniformly distributed {@code float}
      *         value between {@code 0.0} and {@code 1.0} from this
      *         random number generator's sequence
@@ -382,7 +382,7 @@ public class ImmutablePrng {
      *
      * <p>
      * The method {@code nextDouble} is implemented as if by:
-     * 
+     *
      * <pre>
      *  {@code
      * public double nextDouble() {
@@ -390,7 +390,7 @@ public class ImmutablePrng {
      *     / (double)(1L << 53);
      * }}
      * </pre>
-     * 
+     *
      * Except for the seed of this object remains unchanged and a new
      * ImmutablePrng object is returned instead which has the new seed and should be used for future calls.
      *
@@ -401,7 +401,7 @@ public class ImmutablePrng {
      * randomly chosen bits, then the algorithm shown would choose
      * {@code double} values from the stated range with perfect uniformity.
      * <p>
-     * 
+     *
      * @return the next pseudorandom, uniformly distributed {@code double}
      *         value between {@code 0.0} and {@code 1.0} from this
      *         random number generator's sequence
@@ -422,7 +422,7 @@ public class ImmutablePrng {
 
     /**
      * This is used to deserialize a serialized ImmutablePrng (all state amounts to only the value of the seed).
-     * 
+     *
      * ImmutablePrng.of(seed) scrambles the seed, this method uses it untouched, so use this only for constructing an ImmutablePrng with a specific seed value.
      */
     public static ImmutablePrng raw(long seed) {

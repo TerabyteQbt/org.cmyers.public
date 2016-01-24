@@ -1,10 +1,8 @@
 package org.cmyers.games.threes.state;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import org.cmyers.games.threes.random.ImmutablePrng;
-import org.cmyers.games.threes.state.GameState.MoveDirection;
 import org.cmyers.games.threes.util.BoardUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -49,37 +47,37 @@ public class GameStateTest {
     @Test
     public void testCanMoveLeft() {
         GameState left = GameState.TYPE.builder().emptyNext().set(GameState.BOARD, BOARD_CAN_ONLY_MOVE_LEFT).set(GameState.RANDOM, SEEDED_RANDOM).build().setNextNext();
-        Assert.assertTrue(left.canMove(MoveDirection.LEFT));
-        Assert.assertFalse(left.canMove(MoveDirection.UP));
-        Assert.assertFalse(left.canMove(MoveDirection.DOWN));
-        Assert.assertFalse(left.canMove(MoveDirection.RIGHT));
+        Assert.assertTrue(left.canMove(GameState.MoveDirection.LEFT));
+        Assert.assertFalse(left.canMove(GameState.MoveDirection.UP));
+        Assert.assertFalse(left.canMove(GameState.MoveDirection.DOWN));
+        Assert.assertFalse(left.canMove(GameState.MoveDirection.RIGHT));
     }
 
     @Test
     public void testCanMoveRight() {
         GameState right = GameState.TYPE.builder().emptyNext().set(GameState.BOARD, BOARD_CAN_ONLY_MOVE_RIGHT).set(GameState.RANDOM, SEEDED_RANDOM).build().setNextNext();
-        Assert.assertFalse(right.canMove(MoveDirection.LEFT));
-        Assert.assertFalse(right.canMove(MoveDirection.UP));
-        Assert.assertFalse(right.canMove(MoveDirection.DOWN));
-        Assert.assertTrue(right.canMove(MoveDirection.RIGHT));
+        Assert.assertFalse(right.canMove(GameState.MoveDirection.LEFT));
+        Assert.assertFalse(right.canMove(GameState.MoveDirection.UP));
+        Assert.assertFalse(right.canMove(GameState.MoveDirection.DOWN));
+        Assert.assertTrue(right.canMove(GameState.MoveDirection.RIGHT));
     }
 
     @Test
     public void testCanMoveUp() {
         GameState up = GameState.TYPE.builder().emptyNext().set(GameState.BOARD, BOARD_CAN_ONLY_MOVE_UP).set(GameState.RANDOM, SEEDED_RANDOM).build().setNextNext();
-        Assert.assertFalse(up.canMove(MoveDirection.LEFT));
-        Assert.assertTrue(up.canMove(MoveDirection.UP));
-        Assert.assertFalse(up.canMove(MoveDirection.DOWN));
-        Assert.assertFalse(up.canMove(MoveDirection.RIGHT));
+        Assert.assertFalse(up.canMove(GameState.MoveDirection.LEFT));
+        Assert.assertTrue(up.canMove(GameState.MoveDirection.UP));
+        Assert.assertFalse(up.canMove(GameState.MoveDirection.DOWN));
+        Assert.assertFalse(up.canMove(GameState.MoveDirection.RIGHT));
     }
 
     @Test
     public void testCanMoveDown() {
         GameState down = GameState.TYPE.builder().emptyNext().set(GameState.BOARD, BOARD_CAN_ONLY_MOVE_DOWN).set(GameState.RANDOM, SEEDED_RANDOM).build().setNextNext();
-        Assert.assertFalse(down.canMove(MoveDirection.LEFT));
-        Assert.assertFalse(down.canMove(MoveDirection.UP));
-        Assert.assertTrue(down.canMove(MoveDirection.DOWN));
-        Assert.assertFalse(down.canMove(MoveDirection.RIGHT));
+        Assert.assertFalse(down.canMove(GameState.MoveDirection.LEFT));
+        Assert.assertFalse(down.canMove(GameState.MoveDirection.UP));
+        Assert.assertTrue(down.canMove(GameState.MoveDirection.DOWN));
+        Assert.assertFalse(down.canMove(GameState.MoveDirection.RIGHT));
     }
 
     private static Integer box(int i) {
@@ -89,7 +87,7 @@ public class GameStateTest {
     @Test
     public void testBoardToSlicesLeft() {
         GameState g = GameState.TYPE.builder().emptyNext().set(GameState.BOARD, BOARD_WITH_INDEXES).set(GameState.RANDOM, SEEDED_RANDOM).build().setNextNext();
-        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, MoveDirection.LEFT);
+        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, GameState.MoveDirection.LEFT);
         /*
          * 1, 2, 3, 4
          * 5, 6, 7, 8,
@@ -107,7 +105,7 @@ public class GameStateTest {
     @Test
     public void testBoardToSlicesRight() {
         GameState g = GameState.TYPE.builder().emptyNext().set(GameState.BOARD, BOARD_WITH_INDEXES).set(GameState.RANDOM, SEEDED_RANDOM).build().setNextNext();
-        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, MoveDirection.RIGHT);
+        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, GameState.MoveDirection.RIGHT);
         /*
          * 1, 2, 3, 4
          * 5, 6, 7, 8,
@@ -125,7 +123,7 @@ public class GameStateTest {
     @Test
     public void testBoardToSlicesDown() {
         GameState g = GameState.TYPE.builder().emptyNext().set(GameState.BOARD, BOARD_WITH_INDEXES).set(GameState.RANDOM, SEEDED_RANDOM).build().setNextNext();
-        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, MoveDirection.DOWN);
+        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, GameState.MoveDirection.DOWN);
         /*
          * 1, 2, 3, 4
          * 5, 6, 7, 8,
@@ -143,7 +141,7 @@ public class GameStateTest {
     @Test
     public void testBoardToSlicesUp() {
         GameState g = GameState.TYPE.builder().emptyNext().set(GameState.BOARD, BOARD_WITH_INDEXES).set(GameState.RANDOM, SEEDED_RANDOM).build().setNextNext();
-        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, MoveDirection.UP);
+        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, GameState.MoveDirection.UP);
         /*
          * 1, 2, 3, 4
          * 5, 6, 7, 8,
@@ -161,7 +159,7 @@ public class GameStateTest {
     @Test
     public void testBoardToSlicesWithNonSquareBoardUp() {
         GameState g = GameState.TYPE.builder().emptyNext().set(GameState.HEIGHT, 3).set(GameState.BOARD, NON_SQUARE_BOARD).set(GameState.RANDOM, SEEDED_RANDOM).build().setNextNext();
-        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, MoveDirection.UP);
+        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, GameState.MoveDirection.UP);
         /*
          * 1, 2, 3, 4
          * 5, 6, 7, 8,
@@ -178,7 +176,7 @@ public class GameStateTest {
     @Test
     public void testBoardToSlicesWithNonSquareBoardRight() {
         GameState g = GameState.TYPE.builder().emptyNext().set(GameState.HEIGHT, 3).set(GameState.BOARD, NON_SQUARE_BOARD).set(GameState.RANDOM, SEEDED_RANDOM).build().setNextNext();
-        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, MoveDirection.RIGHT);
+        ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, GameState.MoveDirection.RIGHT);
         /*
          * 1, 2, 3, 4
          * 5, 6, 7, 8,
@@ -193,7 +191,7 @@ public class GameStateTest {
 
     @Test
     public void testSlicesToBoard() {
-        for(MoveDirection md : ImmutableSet.of(MoveDirection.LEFT, MoveDirection.RIGHT, MoveDirection.UP, MoveDirection.DOWN)) {
+        for(GameState.MoveDirection md : GameState.MoveDirection.values()) {
             GameState g = GameState.TYPE.builder().emptyNext().set(GameState.BOARD, BOARD_WITH_INDEXES).set(GameState.RANDOM, SEEDED_RANDOM).build().setNextNext();
             ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, md);
             GameState g2 = g.set(GameState.BOARD, ImmutableList.copyOf(BoardUtil.slicesToBoard(g, slices, md)));
@@ -203,7 +201,7 @@ public class GameStateTest {
 
     @Test
     public void testSlicesToBoardNonSquare() {
-        for(MoveDirection md : ImmutableSet.of(MoveDirection.LEFT, MoveDirection.RIGHT, MoveDirection.UP, MoveDirection.DOWN)) {
+        for(GameState.MoveDirection md : GameState.MoveDirection.values()) {
             GameState g = GameState.TYPE.builder().emptyNext().set(GameState.HEIGHT, 3).set(GameState.BOARD, NON_SQUARE_BOARD).set(GameState.RANDOM, SEEDED_RANDOM).build().setNextNext();
             ImmutableList<ImmutableList<Integer>> slices = BoardUtil.boardToSlices(g, md);
             GameState g2 = g.set(GameState.BOARD, ImmutableList.copyOf(BoardUtil.slicesToBoard(g, slices, md)));
