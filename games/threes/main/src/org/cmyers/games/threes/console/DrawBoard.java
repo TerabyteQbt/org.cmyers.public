@@ -38,7 +38,7 @@ public class DrawBoard {
     }
 
     private static String padNumber(Integer i) {
-        String istr = String.valueOf(i);
+        String istr = (i == 0) ? " " : String.valueOf(i);
         if(istr.length() == 1) {
             return "  " + istr + "  ";
         }
