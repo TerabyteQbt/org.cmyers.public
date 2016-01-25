@@ -4,12 +4,19 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import java.io.IOException;
 import org.cmyers.games.threes.console.DrawBoard;
+import org.cmyers.games.threes.random.ImmutablePrng;
 import org.cmyers.games.threes.state.GameState;
 
 public class ConsoleGame {
 
     public static void main(String[] args) throws IOException {
-        GameState g = GameState.TYPE.builder().emptyBoard().emptyNext().random().build().init();
+        ImmutablePrng rng = ImmutablePrng.of();
+        if(args.length >= 1) {
+            // use "raw" so the user can recreate the same game they already played
+            rng = ImmutablePrng.raw(Long.valueOf(args[0]));
+        }
+        System.out.println("Starting game, seed is " + rng.getSeed());
+        GameState g = GameState.TYPE.builder().emptyBoard().emptyNext().random(rng).build().init();
         System.out.println("Gamestate:\n" + DrawBoard.drawBoard(g));
         System.out.println("Move? (w,a,s,d,q?): ");
         int quit = "q".getBytes()[0];
