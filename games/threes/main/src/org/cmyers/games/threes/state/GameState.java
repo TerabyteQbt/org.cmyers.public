@@ -55,6 +55,10 @@ public class GameState extends Struct<GameState, GameState.Builder> {
             return set(RANDOM, ImmutablePrng.of(l));
         }
 
+        public Builder random(ImmutablePrng rng) {
+            return set(RANDOM, rng);
+        }
+
         public Builder emptyNext() {
             return set(NEXT, ImmutableList.of());
         }
@@ -372,4 +376,3 @@ public class GameState extends Struct<GameState, GameState.Builder> {
         return Triple.of(this.set(NEXT, ImmutableList.copyOf(next)).set(RANDOM, rng.getRight()).setNextNext(), nextTile, row);
     }
 }
-
