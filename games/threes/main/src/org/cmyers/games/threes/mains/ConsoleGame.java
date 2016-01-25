@@ -50,5 +50,7 @@ public class ConsoleGame {
             System.out.println("Gamestate:\n" + DrawBoard.drawBoard(g));
             System.out.println("Move? (w,a,s,d,q?): ");
         }
+        System.out.println("Quitting! Score so far: " + g.calculateBoardScore());
+        System.exit(0);
     }
 }
