@@ -3,6 +3,7 @@
 set -e
 
 cp -rp docroot/* $OUTPUT_ARTIFACTS_DIR/
-(cd $INPUT_ARTIFACTS_DIR/weak/meta_tools.release/strong/meta_tools.release && tar -czf $OUTPUT_ARTIFACTS_DIR/qbt-release.tar.gz *)
+(cd $INPUT_ARTIFACTS_DIR/weak/meta_tools.release/strong/meta_tools.release && tar -czf $OUTPUT_ARTIFACTS_DIR/meta_tools.release.tar.gz *)
+cp $INPUT_ARTIFACTS_DIR/weak/meta_tools.release/strong/meta_tools.release/qbt.versionDigest $OUTPUT_ARTIFACTS_DIR/meta_tools.release.digest
 cp -rp $INPUT_ARTIFACTS_DIR/strong/qbt.docs/docs $OUTPUT_ARTIFACTS_DIR/
 
