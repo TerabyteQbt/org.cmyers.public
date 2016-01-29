@@ -1,3 +1,13 @@
+/* qbt-config.sample: This file is an example qbt-config file.
+ *
+ * The qbt-config file is a groovy file that returns a QbtConfig object when
+ * evaluated.  The QbtConfig object can be customized to accomplish a wide
+ * variety of things, but primarily it tells qbt where to store repo and
+ * artifact caches, and where to find pins
+ *
+ * Settings you may want to change are marked with //KNOB
+ * Settings you MUST set are marked with //TODO
+ */
 import com.google.common.collect.ImmutableList;
 import java.nio.file.Paths;
 import qbt.artifactcacher.CompoundArtifactCacher;
@@ -12,103 +22,93 @@ import qbt.remote.FormatQbtRemote;
 import qbt.remote.GithubQbtRemote;
 import qbt.vcs.VcsRegistry;
 
-def dotQbt = Paths.get(System.getenv("HOME")).resolve(".qbt");
+
+def dotQbt = Paths.get(System.getenv("HOME")).resolve(".qbt"); //KNOB: this is where QBT will store its cache.
 def gitRemoteVcs = VcsRegistry.getRawRemoteVcs("git");
 def gitLocalVcs = gitRemoteVcs.getLocalVcs();
+//def token = new File('/home/cmyers/.github-api-token').text.trim(); //KNOB: if you want to use a GithubQbtRemote, fill this in with your github API token.  This is only needed to create repositories, push and pull use your ssh key.
 
-// uncomment this and edit the file to include a github token if desired.
-//def github_api_token = new File(System.getenv("HOME") + '/.github-api-token').text.trim();
-def github_api_token = null
 
-return new QbtConfig(
+return new QbtConfig( //KNOB: if you are setting QBT up for use in an enterprise, you can extend QbtConfig with MyCompanyQbtConfig that sets all the defaults, making this file effectively 1-2 lines.
 
-// First config argument -- where are my overrides?  My simple choice is
-// "next to meta".  LocalRepoFinder is an interface and it's entirely
-// plausible to implement it in other ways, possibly even in qbt-config
-// itself.  You could also replace this with an absolute path like:
-// System.getenv("HOME") + "/projects/%r")
+/* The FormatLocalRepoFinder tells QBT where to put your overrides (i.e. local
+ * checkouts of repositories you are working on).  This default will simply
+ * place them "next to" your checkout of meta, making the directory that
+ * contains the meta checkout effectively the root of your workspace.  For best
+ * results, you probably want to put a .qbt-meta-location file in that
+ * directory as well.
+ *
+ * Note:  Something fancy is going on here.  By setting the environment
+ * variable "NO_OVERRIDES=1", we can temporarily disable overrides.  This is a
+ * handy trick!
+ */ 
      new FormatLocalRepoFinder(
          gitLocalVcs,
-         workspaceRoot.resolve("../%r").toString(),
+         workspaceRoot.resolve(System.getenv("NO_OVERRIDES") ? "/dev/null" : "../%r").toString(), //KNOB: where to put overrides
      ),
 
-// Second config argument -- where are my local pins?  local pins are commits in
-// package repositories that are pointed to by the manifest.  If you push the
-// repository that the manifest file lives in to other people, they can't use it
-// unless they can also get all the commits listed in that manifest, so pins are
-// how QBT accomplishes this.
-// 
-// I put them in my home directory so they're shared between workspaces.  Since
-// this is an immutable, append-only store sharing mostly makes sense.  I notice
-// this is slightly inconsistent specification-wise: most of the rest are
-// formats and this one is root directory that it makes subdirs of.  Should
-// probably go back and change this to format.
+/* The SimpleLocalPinsRepo object tells QBT where to put your pins.  Pins are
+ * git refs for the various sattelite repositories referred to in your
+ * manifest.  They function as a cache of the repositories.  It is safe to use
+ * the same pin cache across all workspaces, because for any single pushPins
+ * only the pins in your qbt-manifest are sent.  If you wanted to, however, you
+ * could still use a per-workspace pins directory.  The default below makes a
+ * shared one in your .qbt directory.
+ */
      new SimpleLocalPinsRepo(
          gitRemoteVcs,
          dotQbt.resolve("pins/v1"),
      ),
 
-// Third config argument -- where are my remotes?  This is just a
-// programmatic mapping from mere string to full-on QbtRemote platform
-// object.
-// 
-// The first half specifies two fixed ones by name.  "terabyte" is one QBT
-// universe on GitHub and "amling" is another.  You could create your own
-// (probably called "origin") by following the docs under "forking a universe".
-// This means anywhere that takes a remote can be given "cmyers" or "amling"
-// or whatever and it will pick these guys.
-// 
-// The second half will always "hit" and treats the string as a format
-// string.  This means I could pass those above format string in place of
-// their short names and get the same effect, just like how you can "git fetch"
-// a git url or a remote name.
+/* The QbtRemote interface tells QBT how to find pins in git remotes.  Here we
+ * demonstrate how to create a list of several remotes which can be used just
+ * like git remotes.
+ *
+ * CompoundQbtRemoteFinder: Takes a list of QbtRemotes, and tries each one in series
+ * MapQbtRemoteFinder: takes a map of "name" to QbtRemote impls
+ *
+ * FormatQbtRemote: Simplest remote, takes a git URL with "%r" substituted in for repository name (optionally).
+ *
+ * GithubQbtRemote: Similar to FormatQbtRemote but github specific, this impl can "autovivify" repositories as well, if they do not exist, on push.
+ *
+ */
      new CompoundQbtRemoteFinder([
          new MapQbtRemoteFinder([
-
-             // Here is an example "github aware" remote
-             // This will automatically create package repos if they don't exist
-             //
-             // IF YOU USE GITHUB, YOU PROBABLY JUST WANT TO COPY THIS AND
-             // MODIFY IT TO POINT AT YOUR GITHUB ORGANIZATION AND CALL IT "origin".
+/* //TODO: you must configure your own remote in order to pushPins anywhere.  You can use a FormatQbtRemote or a GithubQbtRemote as the examples below show.
+             origin: new FormatQbtRemote(
+                 gitRemoteVcs,
+                 "ssh://git@git.example.com/somerepo/%r.git"
+             ),
+*/
+             cmyers: new GithubQbtRemote( //KNOB: you may want to remove these, they are here so you can pull from the QBT core devs.
+                gitRemoteVcs,
+                null,
+                "TerabyteQbt",
+            ),
              amling: new GithubQbtRemote(
                 gitRemoteVcs,
-                github_api_token, // make sure you fill in your github api token above
-                "AmlingQbt", // username or organization name, can contain %r and/or %h
-                // optional 4th argument is the remote repository name, defaults to "%r"
-             ),
-             // The FormatQbtRemote works with any format string git
-             // understands as a remote, but makes no assumptions about it
-             // being github (so it won't, for example, try to call the rest
-             // API to create repositories.
-             terabyte: new FormatQbtRemote(
-                 gitRemoteVcs,
-                 "https://github.com/TerabyteQbt/%r.git",
-             ),
-             // GithubQbtRemote and FormatQBtRemote both implement the
-             // QbtRemote interface.  You can add your own implementations to
-             // handle different servers, autovivification of repositories,
-             // auth, etc.
-             // custom: new ClassThatImplementsQbtRemote(
-             //     gitRemoteVcs, // <-- you probably need one of these in your ctor
-             //     "ssh://git@github.com/TerabyteQbt/%r.git", <-- whatever other args you need
-             // ),
+                null,
+                "AmlingQbt",
+            ),
          ]),
-         // Having this at the bottom of the chain lets you pass git remotes in
-         // directly, i.e. `qbt pushPins git@github.com/TerabyteQbt/%r.git`
-         new FormatQbtRemoteFinder(
+         new FormatQbtRemoteFinder( //KNOB: this is optional, but having it lets you put a raw URL straight into the command like, e.g. "qbt fetchPins ssh://git@git.example.com/foo/%r.git"
              gitRemoteVcs,
          ),
      ]),
 
-// Finally, artifact caching locations and the size of the local cache.  You can
-// probably use this unmodified.  Cache size below is 5G and stored in your
-// dotQbt directory.
+/* The CompoundArtifactCacher lets you configure artifact caching.  This is how
+ * QBT stores artifacts after building them, and finds already-built artifacts
+ * to avoid rebuilding them.  There are ArtifactCacher implementations
+ * available which support remote (shared across machine) caches as well.
+ */
      new CompoundArtifactCacher(
          ImmutableList.of(
              new LocalArtifactCacher(
-                 dotQbt.resolve("artifacts/v1"),
-                 5L * (1024 * 1024 * 1024)
+                 dotQbt.resolve("artifacts/v1"), //KNOB: where to put the artifact cache
+                 5L * (1024 * 1024 * 1024) //KNOB: how big to let the artifact cache grow to (default: 5GB)
              ),
          ),
      ),
-);
+ );
+
+// vi: ft=java
