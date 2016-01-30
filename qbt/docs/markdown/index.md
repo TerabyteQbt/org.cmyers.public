@@ -41,6 +41,7 @@ Presently QBT is only well-tested on GNU/Linux.  It should be very easy to make 
 
 ## Comprehensive Documentation
 
+* [Extended Tutorial](tutorial.html)
 * [Table of Contents](contents.html)
 
     vi: ft=markdown

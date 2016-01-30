@@ -1,6 +1,6 @@
 # QBT - Tutorial
 
-This document covers the same content as the [Quick Start Guide](quick-start.html) and the [Development Guide](development-guide.html) except in far greater detail.
+This document covers similar content to the [Quick Start Guide](quick-start.html) and the [Development Guide](development-guide.html) except in far greater detail.
 
 ## Explaining the `qbt-manifest`
 
@@ -387,7 +387,7 @@ Note that the `qbt commit` command is very picky about the state of your meta re
 
     vi: ft=markdown
 
-## About pins
+## About Pins and Pin Remotes
 
 As we already saw, one of the ugly complexities which QBT generally tries to hide from you, but which cannot always remain hidden, is pins.  Pins are how QBT can "find" commits in various sattelite repositories.  Depending on how your write your configuration file, pins may be stored locally in various different ways, and may be pushed to a remote in different ways as well.  Just as you can push several different branches from several different repositories into the same repository, you can push all your pins to the same local or remote repository, if you desire.  Github seems to have no scaling problems that we have noticed so far, but other backends might perform poorly with hundreds or thousands of unrelated branches in the same repository, so for this reason our recommended configuration stores pins for different repositories in different locations in Github.  This also lets you manually push "normal refs" that other users could read, if you wanted to.
 
@@ -419,7 +419,7 @@ Similarly, pins on the server look the same:
 >     098e2bbbe1d7484df254082b3df62c35eddcd036        refs/qbt-pins/098e2bbbe1d7484df254082b3df62c35eddcd036
 >     09c79988ede27a3b3b28dc4302b94bf118e3528b        refs/qbt-pins/09c79988ede27a3b3b28dc4302b94bf118e3528b
 
-Git stores "normal" branches in "refs/heads/NAME".  By default, it doesn't show things that are outside of the "refs/heads" prefix.  QBT takes advantage of that to store pins in "refs/qbt-pins/NAME".  Because there is no way to ask for a commit by sha1 in the git protocol, we have to pin *every* commit that appears in *every* revision of *every* manifest.  We keep pins outside of `refs/heads/` because otherwise it might negatively impact performance of fetches, clones, etc.  Because if the commit is pinned, we can request it directly, fetching pins can be very fast.  Only if the commit isn't pinned do we have to try fetching all the pins and checking their history to find it.
+We call a git remote which contains pins a "pin remote".  Git stores "normal" branches in "refs/heads/NAME".  By default, it doesn't show things that are outside of the "refs/heads" prefix.  QBT takes advantage of that to store pins in "refs/qbt-pins/NAME".  Because there is no way to ask for a commit by sha1 in the git protocol, we have to pin *every* commit that appears in *every* revision of *every* manifest.  We keep pins outside of `refs/heads/` because otherwise it might negatively impact performance of fetches, clones, etc.  Because if the commit is pinned, we can request it directly, fetching pins can be very fast.  Only if the commit isn't pinned do we have to try fetching all the pins and checking their history to find it.
 
 >     $ git push new_git_remote HEAD:master
 >     $ qbt pushPins new_qbt_remote
@@ -427,6 +427,10 @@ Git stores "normal" branches in "refs/heads/NAME".  By default, it doesn't show 
 As we saw above when creating a new repository, if you ever have to manually create a pin, all you have to do is push the commit to refs/qbt-pins/X where X is the commit's sha1.  Whether you are creating it locally in your pin cache or remotely, the process is the same.  This is exactly what updateManifest does for you (in addition to updating the manifest file).  `qbt pushPins` and `qbt fetchPins` simply tries to push or fetch each pin listed in the manifest file from/to your pin cache.
 
 Pins solve two problems.  The first problem they solve is one of the biggest problems with git submodules - that it is possible to push a commit that refers to a sha1 in a submodule which has not been pushed.  The only way for that to happen with QBT is if you forget to run pushPins, and the cause will be immediately obvious.  The second problem they solve is enabling disconnected development.  Becuase pin caches keep the complete history of all of your commits in meta (as long as you don't crosswind any sattelites - don't do that!), a simple `git fetch` in meta followed by a `qbt fetchPins` ensures you have all the necessary data cached to examine or build any version of any package in the entire history of your manifest file, without needing any network.  This is much more difficult to do when using more traditional dependency managers like Ivy, Maven, or Gradle.  While many have a "cache dependencies" command, you would have to run it for every revision in history to get the same effect, and the artifacts could be very very large.
+
+Sometimes people worry that the number of pins will explode and eventually fetching pins will be very slow.  We haven't run into problems yet, but there are already some ideas for how to improve the situation.  If you enforce that sattelites can *never* do a non-fast-forward change in a manifest (i.e. each revision of the manifest, for all revisions of all repositories, is a fast-forward of the revision of that repository in the previous version), then we only need to keep pins for all current versions of the manifest (because they include the previous commits in them).
+
+We can also "fake up" pins, by creating fake commits that list many "leaf commits" as their parents, to keep more commits while having to fetch fewer pins.  All of these things could be done purely server-side, as a cleanup process, and would require no changes to QBT or how it fetches or pushes pins.
 
 ## Crafting QBT Commits
 
@@ -437,7 +441,7 @@ Before DVCS, most source control systems recognized two states.  "committed" and
 So in summary, git has three stages, unstaged, staged, and committed.  QBT explodes this into 6 states, although just like git, users can safely ignore some of these unless they want to use them (and that is why `qbt commit` exists, to help you ignore them when you don't need them).  The reason for 6 stages is, there are always at least two repositories involved in every commit - meta, and one or more sattelites.  So the complete list of stages is unstaged, staged, sattelite ahead, manifest unstaged, manifest staged, committed.  Let's look at a change in each of the 6 possible states, starting from our workspace root where everything is clean.
 
 >     $ qbt status -v
->     # no output
+>     ...no output
 
 That right there is the "committed" state.  Ok, so now let's create a new file:
 
@@ -476,7 +480,7 @@ If this was plain old git, we'd be "committed", but in QBT, we call this "sattel
 >    Updated repo misc1 from 4f24ec5684b0d65a9421024e9218d9b37719ed1a to 6c7705f7b867c1ba2bc2fa9c81e23bd40a83ccbb...
 >    All update(s) successful, writing manifest.
 >    $ qbt status -v
->    # no output
+>    ...no output
 
 This stage is called "manifest unstaged" because `qbt updateManifest` has made changes to the manifest in our working tree, but those changes are still 'unstaged'.  So here, `qbt status` behaves slightly differently than `git status` would have.  We have changes between the "extended working tree" and the index, but should that appear like an add?  Or like a modification to a tracked "file"?  It's all overly complex and not really a state people use anyways, so for now `qbt status` doesn't really recognize that state.  Thus far, there isn't really a reason to keep changers "in your manifest extended working tree but not staged in meta.".  You can still see this state by running git status directly in the meta repository, of course:
 
