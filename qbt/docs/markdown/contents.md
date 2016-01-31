@@ -24,6 +24,10 @@ This is the complete documentation for QBT, a build tool which specializes in de
     * [updateManifest](qbt-update-manifest.html)
     * [updateOverrides](qbt-update-overrides.html)
 * Uncommon Commands
+    * [addPackage](qbt-add-package.html)
+    * [addRepository](qbt-add-repository.html)
+    * [removePackage](qbt-remove-package.html)
+    * [removeRepository](qbt-remove-repository.html)
     * [resolveManifestConflicts](qbt-resolve-manifest-conflicts.html)
     * [runArtifact](qbt-run-artifact.html)
     * [runOverrides](qbt-run-overrides.html)
