@@ -307,81 +307,9 @@ Finally, the most powerful way to select packages to operate on looks like this:
 
 TODO: I have no clue how --groovyPackages works, and I can't for the life of me figure it out reading the code.  FML.
 
-## Creating Repositories, Packages, and Dependencies
+## Adding Repositories, Packages, and Dependencies
 
-Presently, there are no qbt commands to manupulate the manifest file to add or remove packages, repositories, or dependencies, so it requires a bit of manual editing of the `qbt-manifest` file.
-
-Any time you manually edit the manifest file, be sure to run `qbt updateManifest` to validate the file.  If successful, it will write the file back out, ensuring that ordering, whitespace, etc is all "canonical", and no whitespace diffs will be introduced in the future.  For this reason, it is very important not to forget to do this.
-
-To add a repository, add a new block at the end of the manifest file like this:
-
->         },
->         "new_repo_name": {
->             "version": "0000000000000000000000000000000000000000"
->         }
->     }
-
-Be sure to leave off / add trailing commas correctly.  Since this is JSON, the final element in lists and hashes must not be proceeded by a comma.
-
-You can then `git init new_repo_name` in your workspace, and start coding.  For the first commit only, you will have to manually create a pin.  To do this, first run `git commit` in the repository.  Next, run this command:
-
->     $ (export REPO_NAME="new_repo_name"; export COMMIT="$(git -C $REPO_NAME rev-parse HEAD)"; git init ~/.qbt/pins/v1/$REPO_NAME && git -C $REPO_NAME push ~/.qbt/pins/v1/$REPO_NAME ${COMMIT}:refs/qbt-pins/$COMMIT)
->     Initialized empty Git repository in /home/cmyers/.qbt/pins/v1/new_repo_name/.git/
->     Counting objects: 3, done.
->     Writing objects: 100% (3/3), 203 bytes | 0 bytes/s, done.
->     Total 3 (delta 0), reused 0 (delta 0)
->     To /home/cmyers/.qbt/pins/v1/new_repo_name
->      * [new branch]      c1b0bba63e483c29d9b4eb385dc770b7d7065ba5 -> refs/qbt-pins/c1b0bba63e483c29d9b4eb385dc770b7d7065ba5
-
-Now, update the qbt-manifest version to be the new sha1 "c1b0bba63e483c29d9b4eb385dc770b7d7065ba5", and run `updateManifest`.  It should work.
-
->     $ qbt updateManifest --repo new_repo_name
->     All update(s) successful, writing manifest.
-
-Your changes will no longer be at the end of the `qbt-manifest` file, it will be canonicalized and sorted.
-
-Creating repositories is pretty messy because of pins, but creating packages is trivially easy.  To create packages in an existing repository, simply add a package hash to the repository hash (if it doesn't already exist) and put a package's metadata in it.  In this example we add two packages, a "main" and a "test", both of which require Java.
->         "new_repo_name": {
->             "packages": {
->                 "new_package.main": {
->                     "metadata": {
->                         "archIndependent": true,
->                         "prefix": "relative/path/from/repo/root/main",
->                         "qbtEnv": {
->                             "JDK": 1
->                         }
->                     },
->                     "normalDeps": {
->                         "3p.gradle": "Weak,HEAD",
->                         "mc.com.google.guava.guava": "Strong,HEAD",
->                         "qbt_fringe.linter.release": "Weak,HEAD"
->                     },
->                     "verifyDeps": {
->                         "new_package.test/test": 1
->                     }
->                 },
->                 "new_package.test": {
->                     "metadata": {
->                         "archIndependent": true,
->                         "prefix": "relative/path/from/repo/root/test",
->                         "qbtEnv": {
->                             "JDK": 1
->                         }
->                     },
->                     "normalDeps": {
->                         "3p.gradle": "Weak,HEAD",
->                         "mc.junit.junit": "Strong,HEAD",
->                         "new_package.main": "Strong,HEAD",
->                         "qbt_fringe.linter.release": "Weak,HEAD"
->                     },
->                 },
->             "version": "c1b0bba63e483c29d9b4eb385dc770b7d7065ba5"
->         },
-
-
-Both `normalDeps` and `verifyDeps` are optional if empty.  If your package does not require Java, leave off the `qbtEnv' hash.
-
-Changing dependencies at this point is probably pretty obvious, simply find the package you wish to alter in the `qbt-manifest` file and add or remove dependnecy lines.  Rerun `qbt updateManifest` to "canonicalize" the manifest (ensure the lines are in the correct order, the commas are correct, etc).
+There are several commands to assist in adding or removing repositories and packages, and updating package metadata.  You can add a repository with `qbt addRepository`, and you can add packages to that repository using `qbt addPackage`.  Similarly, `qbt removeRepository` and `qbt removePackage` do the reverse, as you would expect.  `qbt updatePackage` lets you update the metadata fields for a package, which includes the prefix (so you can move a package within a repository), the build type, the qbtEnv keys, and the various dependency types.  For more details, see the extended manual entries on each of these commands.
 
 Note that the `qbt commit` command is very picky about the state of your meta repository.  If you have changes to your manfiest that are not committed, it will refuse to run (lest it unintentionally overwrite something you don't have committed).  For this reason, it is best to commit the metadata changes first, then invoke `qbt commit` to commit your new package revision.  You can use `qbt commit --ammend` to roll it in to your previous commit.
 
