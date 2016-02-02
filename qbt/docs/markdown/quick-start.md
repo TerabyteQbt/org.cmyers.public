@@ -24,8 +24,8 @@ Configuring QBT for first-time use can be somewhat lengthy process.  This is par
 If you are satisfied with the recommended configurations, however, you can copy a config file and be up-and-running almost immediately.  It is recommended you read the sample configuration file as it has extensive comments explaining what knobs you might want to tweak.  The full documentation further explains what all of that means in greater depth.
 
 >     $ cd meta
->     $ wget http://qbtbuildtool.com/qbt-config.example
->     $ mv qbt-config.example qbt-config
+>     $ wget http://qbtbuildtool.com/docs/examples/qbt-config.sample.txt
+>     $ mv docs/qbt-config.sample.txt qbt-config
 
 As you can see, your `qbt-config` file stays next to your qbt-manifest, but is not checked in because it almost always contains local settings.  If you are configuring QBT for use at an enterprise, you may wish to check in a config file, but for most uses of QBT that is not recommended.
 
