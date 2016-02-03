@@ -34,9 +34,17 @@ Build the package `misc1.commons.concurrent.main` and all packages that depend u
 
 >     $ qbt build --package misc1.commons.concurrent.main --outward
 
-TODO: describe Groovy Package specification
+The commands `--groovyPackages` and `--verifyGroovy` let you specify arbitrarily complex code snippets that describe what packages to build.
 
->     $ qbt build --groovyPackage ???
+For example, you can do packages which are inwards of the repository "3p" like this:
+
+>     $ qbt build --groovyPackages 'inward(r("3p"))'
+
+Useful functions include: `inward`, `outward`, `overrides`, `p("pkg_name")`, `r("repo_name")`
+
+
+
+>     $ qbt build --groovyPackage '[]'
 
 See [Common Options](qbt-common-options.html) for options shared by most or all commands.
 

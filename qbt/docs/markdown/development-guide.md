@@ -1,4 +1,4 @@
-# QBT - Development Guide
+# QBT - Developing With QBT
 
 This guide will help you make changes, build them, and submit your changes as a pull request.
 
@@ -16,7 +16,7 @@ The most obvious reading of what happens next is spot on.  When you run a build,
 
 ### Getting an Override
 
-To examine or change the source code for a given package, you need to create an override.  You can ask QBT to override a repository or a specific package, but in either case it figures out the relevant repository and overrides the entire thing.  Git does not allow you to check out just a part of a repository, but don't worry - when your packages actually build, they are isolated from each other, so your builds cannot "reach out" of your package and have secret dependencies on each other, or on their relative paths, etc.  Because overrides always occur at the repository granularity, these commands are equivalent (because the meta_tools.release package is in the `meta_tools` repository).
+To examine or change the source code for a given package, you need to create an override.  You can ask QBT to override a repository or a specific package, but in either case it figures out the relevant repository and overrides the entire thing.  Git does not allow you to check out just a part of a repository, but don't worry - when your packages build and are not overrides (as is likely to be the case on a build node), they are isolated from each other, so your builds cannot "reach out" of your package and have secret dependencies on each other, or on their relative paths, etc.  In this way, by building with no overrides you can confirm your packages are properly independent, but when you build with overrides your builds are fast because they can take place "in place".  Because overrides always occur at the repository granularity, these commands are equivalent (because the meta_tools.release package is in the `meta_tools` repository).
 
 >     $ qbt getOverride --package meta_tools.release
 >     $ qbt getOverride --repo meta_tools
@@ -101,7 +101,7 @@ If we wanted to run tests as well, we would add in the `--verify` flag.
 >     [qbt.bin.test@b0df6c0cf39132672064d5eace797ad3492adcdb] This build could be faster, please consider using the Gradle Daemon: https://docs.gradle.org/2.7/userguide/gradle_daemon.html
 >     Verified requested package qbt.bin.main@c07eca30a34da75242774d6d3d6fe390dd3a7d00
 
-Notice that qbt.bin/main built instantly - it did not print out "Actually building qbt.bin.main".  This is because the package was already built and a cache hit.  Because we asked only for a specific package, the tests only ran when we included the --verify flag.
+Notice that qbt.bin/main built instantly - it did not print out "Actually building qbt.bin.main".  This is because the package was already built and a cache hit.  Because we asked only for a specific package initially, we didn't get a build of `qbt.bin.test` and no tests were run.  In QBT, tests are always in their own package so they can have classpath isolation.  The tests only ran when we included the --verify flag, which tells QBT to include verify dependencies.
 
 We can now run the newly built artifacts directly by asking qbt to `runArtifact`.  This is a qbt feature that makes the test/code cycle very tight.  In a single command, we request that QBT builds an artifact and runs it (but like before, if it is already built, the version in the cache is used).  Another interesting benefit of `qbt runArtifact` is the binary used is copied from the cache to a temporary location, so you know it can never get out of date or corrupt.  No more wondering "maybe if I do a build clean, it will work".  With QBT, <b>every</b> build is clean.  Always.
 
@@ -132,7 +132,7 @@ This takes the artifacts of the `meta_tools.release` package, and places it in `
 
 Packages are the most granular unit for just about everything in QBT.  The smallest thing you can depend upon is one package artifact.  The smallest build you can perform is to build one package.  The smallest unit of classpath isolation is one package.  For this reason, you should consider carefully how you break up your code into packages.  Almost all java libraries should consist of at least 2 packages, "main" and "test", and java applications will probably have 3 or 4 - "main", "test", "bin", "release" - much like qbt.
 
-When QBT builds a package, what it does is copies the package tree to a temporary location.  It then sets `$INPUT_ARTIFACTS_DIR` to point to a temporary location with all of the package's dependencies copied in.  It sets `$OUTPUT_ARTIFACTS_DIR` to point to a temporary, empty location where the package should deposit its results.  Finally, it invokes the `qbt-make` script.  This script can do whatever you want.  It should use tools in the package's dependencies to perform a build, consume other dependencies in the process, and produce artifacts in the `$OUTPUT_ARTIFACTS_DIR` location, and exit 0 for success, or non-zero for failure.  Checkout the complete manual for further details of this process.
+When QBT builds a package that is not an override, it copies the package tree to a temporary location.  Packages in overridden repositories are built in place, but otherwise the build runs the same.  QBT then sets `$INPUT_ARTIFACTS_DIR` to point to a temporary location with all of the package's dependencies copied in.  It sets `$OUTPUT_ARTIFACTS_DIR` to point to a temporary, empty location where the package should deposit its results.  Finally, it invokes the `qbt-make` script.  This script can do whatever you want.  It should use tools in the package's dependencies to perform a build, consume other dependencies in the process, and produce artifacts in the `$OUTPUT_ARTIFACTS_DIR` location, and exit 0 for success, or non-zero for failure.  Checkout the complete manual for further details of this process.
 
 Notice that meta_tools has a "release" package.  This is because the package `meta_tools.main` contains a jar we might wish to depend upon directly, so its artifacts are just the jar it builds.  It is best practice to create "release" packages which take the main jar(s) and all of the dependencies and put them together into a distribution.  They might also create a wrapper script (using, for example, `wrapper_generator`) to more easily run the artifact, and include other data like documentation, a license file, etc.
 
@@ -216,13 +216,13 @@ Just like you can specify a specific file to commit using the expanded form of g
 >     [qbt] Committed e44dd25b5fd27384a92cf6c399a8b6a8a837240f
 >     [meta] Committed a4d5e630e2d8b029d734729e6e4d8e934e1fc39d
 
-Furthermore, you can use the git index just like normal to split of changes within a repository.  By default, `qbt commit` only commits changes in the sattelites which are staged in the index using `git add`.  Just like `git commit`, you can pass `qbt commit` the `-a` flag to tell it to commit all tracked changes, and `-A` to commit all files even incuding untracked files.  Be careful, running `qbt commit -A` with no `--repo` args is an easy way to unintentionally commit files in side repos.  To help avoid this, it is very important to keep your repositories "clean" by using `.gitignore` files in your repositories.  Be sure to ignore temporary files, eclipse generated artifacts, etc.
+Furthermore, you can use the git index just like normal to split of changes within a repository.  By default, `qbt commit` only commits changes in the sattelites which are staged in the index using `git add`.  Just like `git commit` / `git add`, you can pass `qbt commit` the `-a` flag to tell it to commit all tracked changes, and `-A` to commit all files even incuding untracked files.  Be careful, running `qbt commit -A` with no `--repo` args is an easy way to unintentionally commit files in side repos.  To help avoid this, it is very important to keep your repositories "clean" by using `.gitignore` files in your repositories.  Be sure to ignore temporary files, eclipse generated artifacts, etc.
 
 ### Fork the Planet
 
 To demonstrate the complete development cycle, you need somewhere to push your commits to.  This requires some one-time setup which this section will now outline.
 
-In a normal git repository, in order to make a pull request, you first create your own personal "fork" of the repo, so you can push your changes there and request they be pulled.  Since QBT is all about cross-package and cross-repository consistency, you must instead fork the entire "software lifestream".
+In a normal git repository, in order to make a pull request, you first create your own personal "fork" of the repo, so you can push your changes there and request they be pulled.  Since QBT is all about cross-package and cross-repository consistency, you must instead fork the entire "repository set" - a given meta repository plus one of each of its sattelite repositories.  A repository set is everything necessary to build anything in the meta's manifest file.
 
 First, you will need to create a fork of the meta repository.  After that, you will also need a place to store your "pins".  The easiest way to do this is to create an organization in github, so the package repositories don't make a "mess" in your github account.  If your github username is "newuser", we recommend using "NewUserQbt" as your organization, but that's just the convention we've been using, you are free to call it whatever you want (or litter your own github account with pin remotes, if you really want, but beware of name collisions!).
 
@@ -266,7 +266,8 @@ I can then do a build, examine the output, look at the diff, etc.  Then I can ch
 >     $ qbt fetchPins cmyers --all
 >     $ qbt updateOverrides --all # this tells git to make my overrides equal to the versions in the manifest
 >     All update(s) successful
->     $ qbt sdiff origin/master HEAD # examine the diff before building, for safety
+>     $ qbt sdiff origin/master HEAD # examine the code diff before building, for safety
+>     $ git diff --no-ext-diff origin/master HEAD # examine the metadata diff - see what dependencies changes, what packages were added, etc
 >     $ qbt build --all # this only builds things that aren't cache hits, as usual
 
 For another option for viewing diffs, check out the section below about the "QBT diff driver".
@@ -323,13 +324,13 @@ It's worth noting that even though we created all the commits by hand, there was
 
 You may have realized a huge problem with how QBT works... it breaks merge, cherry-pick and rebase in the meta repository!  Many development workflows require merges, rebases, or cherry-picks.  How can you do a merge whose conflict looks like this?
 
->     <<<<< LHS
+>     <<<<<<< LHS
 >     version: "d7debf4dd4efaa8894baef7a8761891aa60093b8"
->     ===== MHS
+>     ||||||| MHS
 >     version: "72c3de77068ead410d05367085b623c0942028d4"
->     ===== RHS
+>     =======
 >     version: "6821aaa3e1b0d0a00677ea6c7b20ad61ad3d5db9"
->     >>>>>
+>     >>>>>>> RHS
 
 Now that you've seen what the conflict block looks like, perhaps the answer is more clear.  If you are doing a merge of a manifest, and the version of a repo changed on both sides of the merge, then you merge together their sha1 in the sattelite repository and use that new sha1 in the resulting manifest.  If that sounds like a royal pain, have no fear, because QBT has a built in git merge-driver to do it for you!
 
@@ -342,13 +343,15 @@ What is a git merge driver you might ask?  Git has a built-in facility for defin
 >     [diff "qbt-manifest"]
 >         command = qbt sdiffDriver  
 
-The first block instructs git to use "diff3 style" conflict headers.  This is not strictly required, but highly recommended.  The default diff view only shows LHS and RHS, seeing MHS often makes conflicts easier to resolve (and you will need to do so in sattelites, on occasion).
+The first block instructs git to use "diff3 style" conflict headers.  The default diff view only shows LHS and RHS, seeing MHS is *required* for correctness in general cases, and even when it is not strictly requried it can make conflicts easier to resolve (and you will need to do so in sattelites, on occasion).
 
 The second block instructs git that there is a "merge driver" called `qbt-manifest` which should be invoked by running `qbt mergeDriver %A %O %B` (which is substituted in with paths to temporary files holding each side of the merge).  The merge driver will <b>only</b> run on files which have the "git attribute" saying they opt in to using that merge driver if available.  Check out the `.gitattributes` file in your meta repo, it looks like this:
 
 >      /qbt-manifest merge=qbt-manifest diff=qbt-manifest
 
 This is saying that the qbt-manifest file should be diffed using these tools, if they are available.  It would be a "remote execution vulnerability" if this file was the only thing needed to make git run this command, however, which is why you must "opt in" to it by adding to your git configuration.  Because you run your own copy of QBT, you can be sure nobody is running code you don't approve of on your machine.
+
+It is important to note that the merge driver will actually look at what command you are running in meta and use that to inform what it does (rebase, merge, cherry-pick).  For `git pull`, however, it cannot know if you are doing a merge or a rebase pull.  For this reason you should probably never do a `git pull` in the meta repository, but for more details see the manual entry on `qbt mergeDriver`.
 
 Finally, the diff driver is an optional bit you might like.  If you include that as well, running `git diff` in meta will actually print out a diff of each of your sattelites, similar to `qbt sdiff`.  Unfortunately, the output currently ignores any diffs in the manifest that are not in sattelites (like changing dependencies, etc), so you will still need to occasionally run "regular diff".  You can disable the diff driver temporarily by running `git diff --no-ext-diff`.  This can make code reviews much easier!
 

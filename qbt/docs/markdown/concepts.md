@@ -44,6 +44,20 @@ TODO: better document weak versus strong differences
 
 Verify dependencies are used to say "this package tests me" so that QBT knows when verification is requested, that package should be built also.  Normally you might think of a test package as any other "client" package that depends upon the thing it tests, but in QBT you might often want to build a certain part of the graph, and thus, request a particular package be built.  Adding `--verify` as an argument tells QBT to follow verify dependency links and build those packages even if they are not requested.  It also helps to ensure tests run on every version of a package when Tips are in use (more on that below).
 
+## Repository Set
+
+A "repository set" is a repository that contains the manifest file, plus a repository for each sattelite in that manifest.  A repository set is all you need to build every package in a particular manifest.
+
+## Realm
+
+A "realm" is a collection of repository sets with comparable repositories.  For example, if I worked a repository set and made my own changes, my fork is part of the realm that describes all forks that contain those comparable repositories.  I might add or remove repositories, but as long as most of the manifest is comparable, we would still call that part of the same realm.
+
+## QBT Software Lifestream
+
+The "QBT Software Lifestream", or just "lifestream", is our name for the collection of all realms that exist.  Theoretically, a user could take multiple realms and compose them together in order to use components from all of them (possibly by merging their manifests, possibly be prefixing repo and package names first to avoid naming conflicts).  The resultant manifest could then have packages added to it which depend upon artifacts from both previous realms.
+
+Presently there is not a good way to accomplish this, especially long-term when a user is likely to wish to maintain changes, and submit them back to the "source realms".  We call this "the realm problem", and it is a problem under active development.
+
 ## Dev Proto
 
 "Dev Proto", or development protocols, are how QBT implements things like Eclipse IDE Integration.  Packages "opt in" to eclipse generation by subscribing to the `eclipse-gen` protocol.  Other protocols could implement support for other IDEs, or for generating other helpful package metadata (such as documentation, identifier indexes, etc).

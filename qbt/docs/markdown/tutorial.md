@@ -1,6 +1,6 @@
 # QBT - Tutorial
 
-This document covers similar content to the [Quick Start Guide](quick-start.html) and the [Development Guide](development-guide.html) except in far greater detail.
+This document covers similar content to the [Quick Start Guide](quick-start.html) and the [Developing With QBT](development-guide.html) except in far greater detail.
 
 ## Explaining the `qbt-manifest`
 
@@ -53,11 +53,11 @@ As of this writing, the qbt-manifest format is a json-like format that looks lik
 >         }
 >     }
 
-Here we see the manifest version is "2".  The QBT used to read this manifest must support at least version 2.  This snippet of manifest defines a repository called `misc1` which contains many packages, only two are included for brevity.  `misc1.commons.algo.main` and `misc1.commons.algo.test`.  Package names are a global namespace and need not start with the repo name - this makes moving packages between repositories easy - but since it is a global namespace, it is best to use longer, descriptive prefixes whenever possible (i.e. `org.mycompany.myproject.main`).  The main package lives in the `commons.algo/main` directory of the repository, and requires a JDK.  To learn more about how JDK versioning works, see [Build Environments](build-environemnts.html).
+Here we see the manifest version is "2".  The QBT used to read this manifest must support at least version 2.  This snippet of manifest defines a repository called `misc1` which contains many packages, only two are included for brevity.  `misc1.commons.algo.main` and `misc1.commons.algo.test`.  Package names are a global namespace and need not start with the repo name - this makes moving packages between repositories easy - but since it is a global namespace, it is best to use longer, descriptive prefixes whenever possible (i.e. `org.mycompany.myproject.main`).  The main package lives in the `commons.algo/main` directory of the repository, and requires a JDK.  To learn more about how JDK versioning works, see [Advanced Dependency Management](advanced_dependencies.html).
 
 This main package has several dependencies.  It depends upon the `3p.gradle` and `qbt_fringe.linter.release` packages as "Weak" dependencies.  A "Weak" dependency is typically used for compile time tools dependencies, it is not necessary that this package use the exact same version of gradle or the linter as all of its dependencies.  This package also depends upon the `mc.com.google.guava.guava` package, however, and this is a "Strong" dependency.  This means that the entire transitive closure of strong dependencies must all use the same version of guava in building.  To learn more about this, see [Advanced Dependency Management](advanced-dependencies.html).
 
-The main package also lists a "verifyDeps" section (which is optional).  Verify dependencies are edges on the graph which are only followed when a verify is requested, and may be cyclical.  They are ideal for saying "this package tests me", as is the case in this example.  Notice that the test package depends upon the main package (because how can you test code you don't have access to?), however, the main package also lists a verify dependency on the test package.  This powerful language for relaying dependency between two packages lets QBT do some very smart and powerful things.
+The main package also lists a "verifyDeps" section (which is optional).  Verify dependencies are edges on the graph which are only followed when a verify is requested, and may cause cycles, while normal dependencies must be acyclic.  They are ideal for saying "this package tests me", as is the case in this example.  Notice that the test package depends upon the main package (because how can you test code you don't have access to?), however, the main package also lists a verify dependency on the test package.  This powerful language for relaying dependency between two packages lets QBT do some very smart and powerful things.
 
 Notice also that the test package depends upon "mc.junit.junit", but the main package does not.  This is how test dependencies must be modeled.  Because each package is a classpath, and there is no classpath separation within packages, tests should be separated out into their own package.  This has many benefits.  First off, you do get classpath separation and know your test dependencies will not be linked or distributed with your production code.  Additionally, as soon as the main package completes, other packages that depend upon it can run while this package's tests are running (since they are in a separate package).  Finally, it is easy to specify which tests you want to run because they are just packages you can request (or not request) like any other.  An error that only manifests in the test package will not stop QBT from trying to continue to build other packages which depend upon main, which might let you see more errors.
 
@@ -185,9 +185,9 @@ Your `qbt-config` file should generally not be checked into source control, beca
 For example, this config file does nothing except include the contents of some other file:
 
 >     import java.nio.file.Paths;
->     return evaluate(Paths.get(System.getenv("HOME")).resolve("qbtconfig").toFile())
+>     return evaluate(Paths.get(System.getenv("HOME")).resolve("qbt-config").toFile())
 
-> NOTE: there is a known issue with groovy where you cannot evaluate a file that contains characters like "." or "-" in its name.
+> NOTE: there is a known issue with groovy where you cannot evaluate a file that contains characters like "." and possibly others in its name.
 
 In this way, you can build `qbt-config` files that include other files, or create files which are shared across workspaces.
 
