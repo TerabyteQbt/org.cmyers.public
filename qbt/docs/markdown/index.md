@@ -37,7 +37,7 @@ Presently QBT is only well-tested on GNU/Linux.  It should be very easy to make 
 
 * [Install QBT](install.html)
 * [Quick Start Guide](quick-start.html)
-* [Development Guide](development-guide.html)
+* [Developing With QBT](development-guide.html)
 
 ## Comprehensive Documentation
 

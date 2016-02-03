@@ -11,6 +11,6 @@ See [Common Options](qbt-common-options.html) for options shared by most or all 
 
 ## Description
 
-`qbt mergeManifests` is a tool you can invoke to manually merge arbitrary `qbt-manifest` files.  Generally, users do not invoke mergeManifests directly but rather set up the [mergeDriver](qbt-merge-driver.html) as outlined in the [Development Guide](development-guide.html).
+`qbt mergeManifests` is a tool you can invoke to manually merge arbitrary `qbt-manifest` files.  Generally, users do not invoke mergeManifests directly but rather set up the [mergeDriver](qbt-merge-driver.html) as outlined in the [Developing With QBT](development-guide.html).
 
     vi: ft=markdown

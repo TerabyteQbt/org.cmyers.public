@@ -57,4 +57,8 @@ Build using infinite parallelization (as many threads as possible) - both of the
 >     $ qbt build --package meta_tools.release -J
 >     $ qbt build --package meta_tools.release --infinite-parallelism
 
+## QBT Environment Options
+
+TODO: write about `--qbtEnv`.
+
     vi: ft=markdown

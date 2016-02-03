@@ -30,7 +30,10 @@ Here are the features we will discuss in this document.  We consider each featur
 * Social Scalability (can the tool be used by independent but collaborating groups, even across lines of trust?)
 * Consistency (does the tool assist in building and managing a set of consistent versions of software owned by independent teams or entities that collaborate via software dependencies, and ensure they do not break each other?)
 * Powerful (does the tool enable advanced features like code generation, using arbitrary build tools, etc without having to write a custom module and without breaking other functionality, like incremental building?)
+* Access to a Massive Library of Dependencies (are "most things out there" in various technology stacks as easy to depend upon as adding a line to a text file?)
 * Atomic Changes Across Multiple Dependencies (If A depends upon B and C, can you make a change to both B and C, or both A and B, as a single atomic operation, which either succeeds or fails?)
+* Easy To Use (can be used without a deep understanding of what is going on, by "just following a script")
+* Developmentally Mature and Stable (has reached a level of maturity where new versions don't break stuff all the time, or drastically change inner workings)
 
 ### Gradle
 
@@ -49,9 +52,12 @@ Gradle is probably the most powerful free, open source tool, and covers the larg
 * Social Scalability - NO
 * Consistency - NO - unless your entire software ecosystem is placed in a single git repository
 * Powerful - NO - requires considerable customization to do anything fancy
+* Access to a Massive Library of Dependencies - YES
 * Atomic Changes Across Multiple Dependencies - NO - again, unless your entire software ecosystem is placed in a single git repository
+* Easy To Use - YES
+* Developmentally Mature and Stable - NO - there are many outstanding bugs and new features are still in rapid development that change core workflows
 
-TOTAL: 6.5 / 14
+TOTAL: 9.5 / 17
 
 ### Maven
 
@@ -70,9 +76,12 @@ Maven is a highly opinionated, "convention over configuration" java build tool u
 * Social Scalability - NO
 * Consistency - NO - unless your entire software ecosystem is placed in a single git repository
 * Powerful - NO - requires writing maven plugins to do anything fancy, and writing and distributing said plugins is much more challenging than with Gradle.
+* Access to a Massive Library of Dependencies - YES
 * Atomic Changes Across Multiple Dependencies - NO - again, unless your entire software ecosystem is placed in a single git repository
+* Easy To Use - YES
+* Developmentally Mature and Stable - YES
 
-TOTAL: 1.0 / 14
+TOTAL: 4.0 / 17
 
 ### Ant
 
@@ -91,9 +100,12 @@ Ant was written as "cross-platform-compatible make".  It has only some of make's
 * Social Scalability - NO
 * Consistency - NO - unless your entire software ecosystem is placed in a single git repository
 * Powerful - BARELY - if you are willing to write the code, you can do pretty much anything, but noting is "facilitated".
+* Access to a Massive Library of Dependencies - YES - if you use Ivy
 * Atomic Changes Across Multiple Dependencies - NO - again, unless your entire software ecosystem is placed in a single git repository, though with make it often is.
+* Easy To Use - YES
+* Developmentally Mature and Stable - YES
 
-TOTAL: 4.5 / 14
+TOTAL: 7.5 / 17
 
 ### Make
 
@@ -112,9 +124,12 @@ Make is literally 4 decades old.  One of the most stable and common choices for 
 * Social Scalability - NO
 * Consistency - NO - unless your entire software ecosystem is placed in a single git repository
 * Powerful - BARELY - if you are willing to write the code, you can do pretty much anything, but noting is "facilitated".
+* Access to a Massive Library of Dependencies - NO
 * Atomic Changes Across Multiple Dependencies - NO - again, unless your entire software ecosystem is placed in a single git repository, though with make it often is.
+* Easy To Use - YES
+* Developmentally Mature and Stable - YES
 
-TOTAL: 7.5 / 14
+TOTAL: 9.5 / 17
 
 ### QBT
 
@@ -131,19 +146,26 @@ TOTAL: 7.5 / 14
 * Social Scalability - YES - By using a distributed but atomic metadata store (the meta repo in git), QBT facilitates collaboration in a way familiar to developers, which functions across teams and even across disparate organizations which needen't trust each other, to produce guaranteed consistent and tested software.
 * Consistency - YES - By using a distributed but atomic metadata store (the meta repo) changes can be tested atomically, even when they involve tens, hundreds, or thousands of repositories, and are accepted or rejected atomically, ensuring that "the current set of versions in meta" are always consistent with a very small, simple piece of infrastructure.
 * Powerful - YES - QBT actually uses code generation and many other advanced dependency features (frozen versions to eliminate cyclic dependencies, build tools that build themselves, etc) with little or no custom code.
+* Access to a Massive Library of Dependencies - NO - not yet, but potentially YES in the future.  For now this is only not true because of lack of adoption and the realms problem.
 * Atomic Changes Across Multiple Dependencies - YES - QBT was designed to solve this very problem.  Again, the distributed atomic metadata store (the meta repo) makes it possible.
+* Easy To Use - NO - because of the inherrent complexity in maintaining a consistent set of versions across packages and repositories, and because of the flexibility and lack of "convention over configuration", QBT requires a deep understanding to be used correctly.
+* Developmentally Mature and Stable - NO - while the base concepts are pretty solidified, changes to config formats, command arguments, and even entire workflows are still common.
 
-TOTAL: 14 / 14
+TOTAL: 14.0 / 17
+
+### Honorable Mention
+
+We have not yet evaluated tools like bazel.io or the various golang build tools, but it would be appropriate to include them here as well.
 
 ### QBT Drawbacks
 
-QBT may be an exciting new tool, but it is not without flaws, some of them serious to users with certain usecases.
+QBT may be an exciting new tool, but it is not without flaws, some of them serious to users with certain usecases.  Here we'll expand upon the "points" lost in the previous section, and other considerations to make before using QBT in a production environment.
 
-* QBT is still under very active development, and configuration and manifest formats are still in flux, although almost all manifest changes are forwards compatible (newer QBT versions can read old and new formats and will seamlessly upgrade them).
 * QBT is a complex tool with a steep learning curve.  Like Git itself, it is powerful and transparent to those who understand its inner workings, but learning it can be challenging for those who want to follow a script, or get fast results with little effort.
-* QBT is not a miracle worker.  While the documentation has made grand, sweeping promises, QBT cannot prevent users from doing stupid things like writing flakey tests, or reading $HOME and looking for stuff that will never be present for any other user.  All claims fall under the major quid pro quo of "as long as your design your build properly and don't do anything insane, which QBT makes every effort to asist you with".
-* QBT works great with a single large manifest inside an organization, and it works sufficiently well in our testing with a "public" and a "private" manifest (which is a superset of the public one), separated out using the [Submanifest](qbt-submanifest.html) command.  However, two or more organizations that wish to share manifests, or an organization that wants to combine the contents of multiple manifest and build on top of it, is an outstanding problem under current development (we call this "the realms problem").  We strongly suggest enterprise users plan to have a single company-wide manifest (because splitting manifests is not done for scaling reasons, it is done to deliniate ownership/trust, and a single enterprise should have similar levels of trust among the entire orgnaization), or at worst, two levels, high side and low side, which can be served by a submanifest split.
+* QBT is still under very active development, and configuration and manifest formats are still in flux, although almost all manifest changes are forwards compatible (newer QBT versions can read old and new formats and will seamlessly upgrade them).
 * QBT's value as a dependency manager is limited to some extent by what dependencies are available in a manifest, and right now, the available libraries are limited.  A somewhat janky, but mostly reliable tool called the [Third Party Importer](qbt-thiird-party-importer.html) exists and can import almost any jar in maven central into QBT for use by other qbt java packages (this is how QBT's third-party dependencies happened).  These jars are checked-in binaries and their dependencies are modeled as closely as we can based upon the (highly flawed and often incorrect) information in their maven pom descriptor.  Manual mucking is often required after import.  The jars consistency is maintained by a tool called the [Link Checker](link-checker.html), which uses a bytecode analyzer to ensure that all classes load and have their dependencies satisfied by the compile time classpath of the module.  Non-java dependencies generally have to be brought into QBT, and their terrible non-reproducible builds rewritten.  If a package were to depend upon something outside of QBT, it would invalidate QBT's CumulativeVersions and cache of that package, and basically break everything QBT is trying to do.
+* QBT is not a miracle worker.  While the documentation has made grand, sweeping promises, QBT (and any other tool, for that matter) cannot prevent users from doing stupid things like writing flakey tests, or reading $HOME and looking for stuff that will never be present for any other user.  All claims fall under the major quid pro quo of "as long as your design your build properly and don't do anything insane, which QBT makes every effort to asist you with".
+* QBT works great with a single large manifest inside an organization, and it works sufficiently well in our testing with a "public" and a "private" manifest (which is a superset of the public one), separated out using the [Submanifest](qbt-submanifest.html) command.  (the use case of a single realm, or two realms where one is a superset of the other).  However, two or more organizations that wish to share manifests, or an organization that wants to combine the contents of multiple manifest and build on top of it, is an outstanding problem under current development (we call this "the realms problem").  We strongly suggest enterprise users plan to have a single company-wide manifest (because splitting manifests is not done for scaling reasons, it is done to deliniate ownership/trust, and a single enterprise should have similar levels of trust among the entire orgnaization), or at worst, two levels, high side and low side, which can be served by a submanifest split.
 
 ## Summary
 
