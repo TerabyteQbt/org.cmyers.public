@@ -22,6 +22,6 @@ See [Common Options](qbt-common-options.html) for options shared by most or all 
 
 `qbt getOverride` is the main way to examine or change code in sattelite repositories, since the meta repository contains metadata only.
 
-For details on how Overrides work, see [Development Guide](development-guide.html).
+For details on how Overrides work, see [Developing With QBT](development-guide.html).
 
     vi: ft=markdown

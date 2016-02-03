@@ -6,7 +6,7 @@ This is the complete documentation for QBT, a build tool which specializes in de
 
 * [Install QBT](install.html)
 * [Quick Start Guide](quick-start.html)
-* [Development Guide](development-guide.html)
+* [Developing With QBT](development-guide.html)
 
 ## Comprehensive Documentation
 

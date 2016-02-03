@@ -28,7 +28,7 @@ See [Common Options](qbt-common-options.html) for options shared by most or all 
 
 `qbt sdiff` is the command for diffing manifest files (and seeing the *real* diff, instead of just sha1 changed from A to B).
 
-For details about how to set up the diff driver, see the [Development Guide](development-guide.html).
+For details about how to set up the diff driver, see the [Developing With QBT](development-guide.html).
 For details about the 6 different states a change can be in, see [Extended Tutorial](tutorial.html) section entitled "Crafting QBT Commits".
 
     vi: ft=markdown

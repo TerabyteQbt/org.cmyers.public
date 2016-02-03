@@ -77,10 +77,10 @@ Optionally, you may also want to add this if you want `git diff` in meta to show
 
 Both of these require that the QBT wrapper script and a python interpreter be on your path and that JAVA_HOME be set to a JDK8.
 
-For more in-depth discussion of what is going on here, see the section in the [Development Guide](development-guide.html) about the merge driver and diff driver.
+For more in-depth discussion of what is going on here, see the section in the [Developing With QBT](development-guide.html) about the merge driver and diff driver.
 
 ## Summary
 
-If you are ready to learn how to use QBT to make changes and submit pull requests, continue on to the [Development Guide](development-guide.html).
+If you are ready to learn how to use QBT to make changes and submit pull requests, continue on to the [Developing With QBT](development-guide.html).
 
     vi: ft=markdown
