@@ -22,6 +22,6 @@ See [Common Options](qbt-common-options.html) for options shared by most or all 
 
 This is very useful for debugging, running partial builds, or examining intermediate build output.  If you are hoping to run git commands, see [runOverrides](qbt-run-overrides.html).  If you are hoping to run package artifacts, see [runArtifact](qbt-run-artifact.html).
 
-For more details about `$INPUT_ARTIFACTS_DIR` and `$OUTPUT_ARTIFACTS_DIR`, see the [Development Guide](development-guide.html).
+For more details about `$INPUT_ARTIFACTS_DIR` and `$OUTPUT_ARTIFACTS_DIR`, see the [Developing With QBT](development-guide.html).
 
     vi: ft=markdown

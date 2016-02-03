@@ -18,6 +18,6 @@ This requires qbt to be on your path, and your `$JAVA_HOME` properly set.
 
 It is expected users will practically never run this command directly.
 
-For more details about setting up the merge driver, see the [Development Guide](development-guide.html).
+For more details about setting up the merge driver, see the [Developing With QBT](development-guide.html).
 
     vi: ft=markdown

@@ -25,6 +25,6 @@ You should see output like this:
 
 If that doesn't work, ensure you have a python interpreter on your path.  The wrapper scripts that invoke qbt are written in python.
 
-That's it!  QBT is installed successfully.  There is still a lot of configuring to do, however, so you should follow the [Quick Start Guide](qhick-start.html) to set up the configuration and start building things.
+That's it!  QBT is installed successfully.  There is still a lot of configuring to do, however, so you should follow the [Quick Start Guide](quick-start.html) to set up the configuration and start building things.
 
     vi: ft=markdown

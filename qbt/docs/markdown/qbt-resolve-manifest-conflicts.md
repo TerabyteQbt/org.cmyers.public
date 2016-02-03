@@ -20,6 +20,6 @@ See [Common Options](qbt-common-options.html) for options shared by most or all 
 
 When you do a merge, rebase, or cherry-pik in a meta repository, you are all but guaranteed to have conflicts in your `qbt-manifest` file.  This is why QBT provides a merge driver.  With the merge driver in place, you only get conflicts when there is an actual textural conflict in a sattelite repository.  In that rare case, you must resolve the conflicts in the sattelites.  This command exists to help you do that.
 
-For details about the merge driver and conflict resolution, see the [Development Guide](development-guide.html).
+For details about the merge driver and conflict resolution, see the [Developing With QBT](development-guide.html).
 
     vi: ft=markdown
