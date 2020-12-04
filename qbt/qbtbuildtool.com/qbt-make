@@ -3,6 +3,10 @@
 set -e
 
 cp -rp docroot/* $OUTPUT_ARTIFACTS_DIR/
+
+# NOT REPRODUCIBLE!  ah well.
+echo "Last Modified: $(date)" > $OUTPUT_ARTIFACTS_DIR/timestamp.txt
+
 (cd $INPUT_ARTIFACTS_DIR/weak/meta_tools.release/strong/meta_tools.release && tar -czf $OUTPUT_ARTIFACTS_DIR/meta_tools.release.tar.gz *)
 cp $INPUT_ARTIFACTS_DIR/weak/meta_tools.release/strong/meta_tools.release/qbt.versionDigest $OUTPUT_ARTIFACTS_DIR/meta_tools.release.digest
 cp -rp $INPUT_ARTIFACTS_DIR/strong/qbt.docs/docs $OUTPUT_ARTIFACTS_DIR/
